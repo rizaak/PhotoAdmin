@@ -85,12 +85,29 @@ studios ──< galleries ──< sections ──< photos
 - **`studios`** — tenant: nombre, slug, logo, `auth0_user_id` del dueño.
 - **`galleries`** — título, slug del enlace, estado (`draft/published/archived`),
   `password_hash` (null = sin contraseña), portada (foto, plantilla, punto focal
-  x/y), tema (claro/oscuro), orden de fotos (`captura/nombre/manual`), y entrega:
-  `download_enabled`, resoluciones habilitadas (web/alta/original),
+  x/y), tema (claro/oscuro), orden de fotos (`captura/nombre/manual`), y entrega
+  por defecto: `download_enabled`, resoluciones habilitadas (web/alta/original),
   `watermark_mode` (`none/view/download/both`), imagen o texto de marca de agua.
-- **`sections`** — nombre, posición, `visible`.
+- **`sections`** — nombre, posición, `visible` (controla si la sección aparece
+  en la galería del cliente), y overrides opcionales de `watermark_mode` y
+  descarga (null = hereda de la galería).
 - **`photos`** — claves R2 (original y derivados), dimensiones, fecha de captura
-  (EXIF), posición manual, `published`, estado (`processing/ready/error`).
+  (EXIF), posición manual, `published`, estado (`processing/ready/error`),
+  `section_id` **nullable** ("sin sección"), y override opcional de marca de
+  agua por foto (null = hereda de sección/galería).
+
+### Marca de agua y descargas en tres niveles
+
+La configuración efectiva de una foto se resuelve por herencia:
+**foto → sección → galería** (el nivel más específico que no sea null gana).
+Esto permite, en una misma galería, una sección "Selección" con marca de agua y
+sin descarga junto a una sección "Fotos listas" limpia y descargable, o marcar
+fotos concretas con/sin marca. Cuando cambia cualquier nivel, se regeneran en
+background solo las variantes de las fotos afectadas.
+
+Las fotos sin sección aparecen en el dashboard en una bandeja "Sin sección"; en
+la galería del cliente se muestran (si están publicadas) en un bloque inicial
+sin título, antes de las secciones.
 - **`clients`** — email, nombre opcional. **`gallery_clients`** — cliente↔galería,
   último acceso.
 - **`likes`** — únicos por (cliente, foto). **`comments`** — cliente, foto, texto.
@@ -105,18 +122,33 @@ ve toda la actividad agrupada por cliente (email).
 ## Flujos
 
 **Fotógrafo:** crear galería → secciones → subir fotos (drag & drop, directo a
-R2) → configurar portada/tema/orden/contraseña/marca de agua/descargas →
-publicar y compartir enlace → seguir actividad (accesos, favoritas filtrables,
-comentarios) en el dashboard.
+R2) → organizar y configurar → publicar y compartir enlace → seguir actividad
+(accesos, favoritas filtrables, comentarios) en el dashboard.
+
+### Gestor de fotos del dashboard
+
+La vista de administración de una galería es un grid tipo gestor de archivos:
+
+- **Selección múltiple**: clic + Shift/Cmd y *rubber-band* (arrastrar el mouse
+  para seleccionar un área de fotos).
+- **Acciones sobre la selección**: mover a otra sección, aplicar/quitar marca de
+  agua, publicar/ocultar, eliminar.
+- **Secciones**: crear, renombrar, reordenar, mostrar/ocultar; al eliminar una
+  sección sus fotos pasan a "Sin sección" (nunca se borran fotos por borrar la
+  sección).
+- **Por foto**: previsualizar en lightbox, ver nombre de archivo, eliminar, y
+  badges con el número de favoritas y comentarios que acumula.
+- **Reordenar** fotos por arrastre cuando el orden de la galería es manual.
 
 **Cliente:** abre enlace → contraseña si la hay → email (siempre; crea la sesión)
 → navega secciones visibles y fotos publicadas con la variante permitida →
 favoritas y comentarios → descargas si están habilitadas: foto suelta o ZIP
 (galería, sección o favoritas) en las resoluciones habilitadas por el fotógrafo.
 
-**Flujo de dos fases (selección → entrega):** se logra con configuración, sin
-estados especiales: publicar con marca de agua y descarga desactivada; para la
-entrega final, reemplazar/añadir fotos finales, quitar marca y activar descargas.
+**Flujo de dos fases (selección → entrega):** se logra con secciones y herencia,
+sin estados especiales: una sección "Selección" (marca de agua, sin descarga)
+visible durante la elección; al entregar, se agrega una sección "Fotos listas"
+(limpia, descargable) y se oculta o conserva la de selección según convenga.
 
 ## Seguridad
 
