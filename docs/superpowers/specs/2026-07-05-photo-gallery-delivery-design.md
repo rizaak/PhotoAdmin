@@ -93,8 +93,9 @@ studios ──< galleries ──< sections ──< photos
   descarga (null = hereda de la galería).
 - **`photos`** — claves R2 (original y derivados), dimensiones, fecha de captura
   (EXIF), posición manual, `published`, estado (`processing/ready/error`),
-  `section_id` **nullable** ("sin sección"), y override opcional de marca de
-  agua por foto (null = hereda de sección/galería).
+  `section_id` **nullable** ("sin sección"), override opcional de marca de
+  agua por foto (null = hereda de sección/galería), y `size_bytes` del original
+  y de los derivados para los totales de almacenamiento.
 
 ### Marca de agua y descargas en tres niveles
 
@@ -139,9 +140,21 @@ La vista de administración de una galería es un grid tipo gestor de archivos:
 - **Secciones**: crear, renombrar, reordenar, mostrar/ocultar; al eliminar una
   sección sus fotos pasan a "Sin sección" (nunca se borran fotos por borrar la
   sección).
-- **Por foto**: previsualizar en lightbox, ver nombre de archivo, eliminar, y
-  badges con el número de favoritas y comentarios que acumula.
+- **Por foto**: previsualizar en lightbox, establecer como portada de la
+  galería, ver nombre de archivo, mover de sección, eliminar, y badges con el
+  número de favoritas y comentarios que acumula. Las mismas acciones (salvo
+  portada) operan en lote sobre la selección múltiple.
 - **Reordenar** fotos por arrastre cuando el orden de la galería es manual.
+
+### Pantalla principal del dashboard
+
+- **Lista de galerías con buscador** (por título y cliente) y filtros por
+  estado (`borrador/publicada/archivada`), pensada para cuando haya decenas de
+  galerías.
+- **Indicador de almacenamiento siempre visible**: espacio total consumido por
+  todas las galerías (originales + derivados en R2), y el desglose por galería
+  en su tarjeta/fila. Cada foto guarda su `size_bytes` (original y derivados)
+  y los totales se agregan por galería y por estudio.
 
 ### Actividad y seguimiento por cliente
 
@@ -196,9 +209,10 @@ visible durante la elección; al entregar, se agrega una sección "Fotos listas"
 ## Fases de construcción
 
 1. **Fundación** — proyecto Next.js, esquema Drizzle, Auth0, CRUD de galerías y
-   secciones en el dashboard.
-2. **Fotos** — subida directa a R2, pipeline de derivados, vista de galería del
-   cliente (solo lectura).
+   secciones, lista de galerías con buscador y filtros.
+2. **Fotos** — subida directa a R2, pipeline de derivados, gestor de fotos del
+   dashboard, indicador de almacenamiento, vista de galería del cliente (solo
+   lectura).
 3. **Acceso de clientes** — contraseña + email + sesión, likes, comentarios,
    pestaña de actividad (favoritas/comentarios por cliente, log de movimientos,
    crear sección desde selecciones), emails vía Resend.
