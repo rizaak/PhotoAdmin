@@ -1,0 +1,16 @@
+{
+  "galleries": {
+    "title": "Galleries",
+    "searchPlaceholder": "Search by title…",
+    "filter": "Filter",
+    "allStatuses": "All statuses",
+    "status": { "draft": "Draft", "published": "Published", "archived": "Archived" },
+    "newGallery": "New gallery",
+    "galleryTitle": "Title",
+    "passwordOptional": "Password (optional, min 4)",
+    "create": "Create",
+    "delete": "Delete",
+    "empty": "No galleries match.",
+    "created": "Created"
+  }
+}
