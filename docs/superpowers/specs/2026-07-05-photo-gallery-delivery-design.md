@@ -56,9 +56,9 @@ Una sola aplicación Next.js con dos áreas:
 4. Si cambia la configuración de marca de agua de una galería, las variantes se
    regeneran en background.
 
-La API de subida usa autenticación por **API key** además de la sesión Auth0,
-de modo que el plugin de Lightroom del usuario pueda consumir los mismos
-endpoints (incluida la creación de colección/galería). La integración del plugin
+La API de subida acepta dos formas de autenticación equivalentes: sesión Auth0
+(navegador) **o** API key (plugin de Lightroom), de modo que el plugin pueda
+consumir los mismos endpoints (incluida la creación de colección/galería). La integración del plugin
 queda **fuera de este spec** (fase futura; el usuario compartirá el plugin).
 
 ### ZIPs (única pieza fuera de Vercel)
