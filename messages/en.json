@@ -12,5 +12,32 @@
     "delete": "Delete",
     "empty": "No galleries match.",
     "created": "Created"
+  },
+  "galleryDetail": {
+    "settings": "Settings",
+    "title": "Title",
+    "status": "Status",
+    "theme": "Theme",
+    "themes": { "light": "Light", "dark": "Dark" },
+    "photoOrder": "Photo order",
+    "orders": { "capture": "Capture date", "filename": "Filename", "manual": "Manual" },
+    "watermarkMode": "Watermark",
+    "watermarks": { "none": "None", "view": "On view", "download": "On download", "both": "Both" },
+    "downloadEnabled": "Allow downloads",
+    "resolutions": "Enabled resolutions",
+    "resWeb": "Web (2048px)", "resHigh": "High", "resOriginal": "Original",
+    "newPassword": "New password (empty = unchanged)",
+    "clearPassword": "Remove password",
+    "save": "Save",
+    "shareLink": "Client link",
+    "sections": "Sections",
+    "sectionName": "Section name",
+    "add": "Add",
+    "rename": "Rename",
+    "up": "Up", "down": "Down",
+    "show": "Show", "hide": "Hide",
+    "delete": "Delete",
+    "noSections": "No sections yet.",
+    "hidden": "hidden"
   }
 }

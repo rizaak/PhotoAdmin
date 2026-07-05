@@ -12,5 +12,32 @@
     "delete": "Eliminar",
     "empty": "No hay galerías que coincidan.",
     "created": "Creada"
+  },
+  "galleryDetail": {
+    "settings": "Configuración",
+    "title": "Título",
+    "status": "Estado",
+    "theme": "Tema",
+    "themes": { "light": "Claro", "dark": "Oscuro" },
+    "photoOrder": "Orden de fotos",
+    "orders": { "capture": "Fecha de captura", "filename": "Nombre de archivo", "manual": "Manual" },
+    "watermarkMode": "Marca de agua",
+    "watermarks": { "none": "Sin marca", "view": "En vista", "download": "En descarga", "both": "Ambas" },
+    "downloadEnabled": "Permitir descargas",
+    "resolutions": "Resoluciones habilitadas",
+    "resWeb": "Web (2048px)", "resHigh": "Alta", "resOriginal": "Original",
+    "newPassword": "Nueva contraseña (vacío = sin cambio)",
+    "clearPassword": "Quitar contraseña",
+    "save": "Guardar",
+    "shareLink": "Enlace para clientes",
+    "sections": "Secciones",
+    "sectionName": "Nombre de la sección",
+    "add": "Agregar",
+    "rename": "Renombrar",
+    "up": "Subir", "down": "Bajar",
+    "show": "Mostrar", "hide": "Ocultar",
+    "delete": "Eliminar",
+    "noSections": "Aún no hay secciones.",
+    "hidden": "oculta"
   }
 }
