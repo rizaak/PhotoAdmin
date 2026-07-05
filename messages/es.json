@@ -1,4 +1,7 @@
 {
+  "adminLayout": {
+    "logout": "Salir"
+  },
   "galleries": {
     "title": "Galerías",
     "searchPlaceholder": "Buscar por título…",
@@ -11,7 +14,8 @@
     "create": "Crear",
     "delete": "Eliminar",
     "empty": "No hay galerías que coincidan.",
-    "created": "Creada"
+    "created": "Creada",
+    "deleteConfirm": "¿Eliminar esta galería? Esta acción no se puede deshacer."
   },
   "galleryDetail": {
     "settings": "Configuración",

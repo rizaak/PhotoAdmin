@@ -4,7 +4,8 @@ import { db } from "@/db";
 import { requireStudio } from "@/server/auth";
 import { listGalleries } from "@/server/galleries";
 import type { GalleryStatus } from "@/db/schema";
-import { createGalleryAction, deleteGalleryAction } from "./actions";
+import { createGalleryAction } from "./actions";
+import { DeleteGalleryForm } from "./delete-gallery-form";
 
 const STATUSES: GalleryStatus[] = ["draft", "published", "archived"];
 
@@ -53,10 +54,11 @@ export default async function GalleriesPage({
                 {t(`status.${g.status}`)} · {t("created")} {g.createdAt.toISOString().slice(0, 10)}
               </p>
             </div>
-            <form action={deleteGalleryAction}>
-              <input type="hidden" name="galleryId" value={g.id} />
-              <button className="text-sm text-red-600 hover:underline">{t("delete")}</button>
-            </form>
+            <DeleteGalleryForm
+              galleryId={g.id}
+              label={t("delete")}
+              confirmMessage={t("deleteConfirm")}
+            />
           </li>
         ))}
       </ul>
@@ -64,7 +66,7 @@ export default async function GalleriesPage({
       <form action={createGalleryAction} className="flex max-w-md flex-col gap-2 rounded border bg-white p-4">
         <h2 className="font-medium">{t("newGallery")}</h2>
         <input name="title" required placeholder={t("galleryTitle")} className="rounded border px-3 py-1.5 text-sm" />
-        <input name="password" placeholder={t("passwordOptional")} className="rounded border px-3 py-1.5 text-sm" />
+        <input name="password" minLength={4} placeholder={t("passwordOptional")} className="rounded border px-3 py-1.5 text-sm" />
         <button className="self-start rounded bg-neutral-900 px-3 py-1.5 text-sm text-white">{t("create")}</button>
       </form>
     </div>

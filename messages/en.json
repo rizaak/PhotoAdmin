@@ -1,4 +1,7 @@
 {
+  "adminLayout": {
+    "logout": "Log out"
+  },
   "galleries": {
     "title": "Galleries",
     "searchPlaceholder": "Search by title…",
@@ -11,7 +14,8 @@
     "create": "Create",
     "delete": "Delete",
     "empty": "No galleries match.",
-    "created": "Created"
+    "created": "Created",
+    "deleteConfirm": "Delete this gallery? This action cannot be undone."
   },
   "galleryDetail": {
     "settings": "Settings",

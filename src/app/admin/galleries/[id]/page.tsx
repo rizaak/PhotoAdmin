@@ -95,7 +95,7 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
           </fieldset>
           <label className="flex flex-col gap-1">
             {t("newPassword")}
-            <input name="password" type="password" className={input} />
+            <input name="password" type="password" minLength={4} className={input} />
           </label>
           <label className="flex items-center gap-2 self-end">
             <input type="checkbox" name="clearPassword" className={check} />
@@ -116,7 +116,7 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
               <form action={renameSectionAction} className="flex flex-1 items-center gap-2">
                 <input type="hidden" name="galleryId" value={gallery.id} />
                 <input type="hidden" name="sectionId" value={s.id} />
-                <input name="name" defaultValue={s.name} className={`${input} flex-1`} />
+                <input name="name" defaultValue={s.name} required className={`${input} flex-1`} />
                 <button className="text-neutral-600 hover:underline">{t("rename")}</button>
               </form>
               {!s.visible && <span className="rounded bg-neutral-200 px-1.5 text-xs">{t("hidden")}</span>}
