@@ -55,11 +55,26 @@ export async function setSectionVisible(db: Db, studioId: string, sectionId: str
 
 export async function reorderSections(db: Db, studioId: string, galleryId: string, orderedIds: string[]): Promise<void> {
   await getGallery(db, studioId, galleryId);
-  for (let i = 0; i < orderedIds.length; i++) {
-    await db.update(sections)
-      .set({ position: i })
-      .where(and(eq(sections.id, orderedIds[i]), eq(sections.galleryId, galleryId)));
-  }
+
+  const current = await db
+    .select({ id: sections.id })
+    .from(sections)
+    .where(eq(sections.galleryId, galleryId));
+  const currentIds = new Set(current.map((r) => r.id));
+  const orderedSet = new Set(orderedIds);
+  const isPermutation =
+    orderedIds.length === currentIds.size &&
+    orderedSet.size === orderedIds.length &&
+    orderedIds.every((id) => currentIds.has(id));
+  if (!isPermutation) throw new Error("INVALID_ORDER");
+
+  await db.transaction(async (tx) => {
+    for (let i = 0; i < orderedIds.length; i++) {
+      await tx.update(sections)
+        .set({ position: i })
+        .where(and(eq(sections.id, orderedIds[i]), eq(sections.galleryId, galleryId)));
+    }
+  });
 }
 
 export async function deleteSection(db: Db, studioId: string, sectionId: string): Promise<void> {

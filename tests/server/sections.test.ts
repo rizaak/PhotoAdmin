@@ -45,7 +45,21 @@ describe("sections domain", () => {
 
     await deleteSection(db, studio.id, s.id);
     const [after] = await db.select().from(photos).where(eq(photos.id, photo.id));
+    expect(after).toBeDefined();
     expect(after.sectionId).toBeNull();
+  });
+
+  it("rejects reorders that are not a permutation of the gallery's sections", async () => {
+    const { db, studio, gallery } = await setup();
+    const s1 = await createSection(db, studio.id, gallery.id, "A");
+    const s2 = await createSection(db, studio.id, gallery.id, "B");
+
+    // duplicate id
+    await expect(reorderSections(db, studio.id, gallery.id, [s1.id, s1.id]))
+      .rejects.toThrow("INVALID_ORDER");
+    // incomplete list
+    await expect(reorderSections(db, studio.id, gallery.id, [s2.id]))
+      .rejects.toThrow("INVALID_ORDER");
   });
 
   it("is tenant-scoped", async () => {
@@ -56,5 +70,8 @@ describe("sections domain", () => {
     await expect(createSection(db, intruder.id, gallery.id, "X")).rejects.toThrow("NOT_FOUND");
     await expect(renameSection(db, intruder.id, s.id, "X")).rejects.toThrow("NOT_FOUND");
     await expect(deleteSection(db, intruder.id, s.id)).rejects.toThrow("NOT_FOUND");
+    await expect(setSectionVisible(db, intruder.id, s.id, false)).rejects.toThrow("NOT_FOUND");
+    await expect(reorderSections(db, intruder.id, gallery.id, [s.id])).rejects.toThrow("NOT_FOUND");
+    await expect(listSections(db, intruder.id, gallery.id)).rejects.toThrow("NOT_FOUND");
   });
 });
