@@ -111,7 +111,10 @@ sin título, antes de las secciones.
 - **`clients`** — email, nombre opcional. **`gallery_clients`** — cliente↔galería,
   último acceso.
 - **`likes`** — únicos por (cliente, foto). **`comments`** — cliente, foto, texto.
-- **`activity_events`** — acceso, like, comentario; alimenta dashboard y emails.
+- **`activity_events`** — solo eventos relevantes: acceso a la galería, favorita
+  agregada/quitada, comentario, descarga (foto o ZIP). Alimenta el panel de
+  actividad, el log por cliente y los emails. No se registra navegación foto a
+  foto ni otro ruido.
 - **`api_keys`** — hasheadas; para el plugin (futuro).
 
 ### Privacidad de la actividad
@@ -139,6 +142,22 @@ La vista de administración de una galería es un grid tipo gestor de archivos:
 - **Por foto**: previsualizar en lightbox, ver nombre de archivo, eliminar, y
   badges con el número de favoritas y comentarios que acumula.
 - **Reordenar** fotos por arrastre cuando el orden de la galería es manual.
+
+### Actividad y seguimiento por cliente
+
+Cada galería tiene una pestaña de **Actividad** en el dashboard con:
+
+- **Favoritas y comentarios por cliente**: lista de clientes (email) de la
+  galería; al elegir uno se ven sus fotos favoritas en grid y sus comentarios
+  junto a cada foto.
+- **Crear sección desde una selección**: a partir de las favoritas de un
+  cliente — o de la **combinación de varios** (p. ej. novia + novio, unión sin
+  duplicados) — se crea una sección con esas fotos. Las fotos se **mueven** a la
+  nueva sección (una foto vive en una sola sección, nunca en varias). Al crearla,
+  la app pregunta: *"¿Ocultar las demás secciones y dejar visible solo esta?"*.
+- **Log de movimientos**: cronología por cliente con solo lo importante —
+  accesos, favoritas agregadas/quitadas, comentarios y descargas. Sin ruido de
+  navegación.
 
 **Cliente:** abre enlace → contraseña si la hay → email (siempre; crea la sesión)
 → navega secciones visibles y fotos publicadas con la variante permitida →
@@ -181,7 +200,8 @@ visible durante la elección; al entregar, se agrega una sección "Fotos listas"
 2. **Fotos** — subida directa a R2, pipeline de derivados, vista de galería del
    cliente (solo lectura).
 3. **Acceso de clientes** — contraseña + email + sesión, likes, comentarios,
-   panel de actividad, emails vía Resend.
+   pestaña de actividad (favoritas/comentarios por cliente, log de movimientos,
+   crear sección desde selecciones), emails vía Resend.
 4. **Entrega** — descargas por resolución, marca de agua configurable, Worker
    de ZIP.
 5. **Presentación** — plantillas de portada con punto focal, temas, orden manual,
