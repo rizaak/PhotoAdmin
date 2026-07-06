@@ -8,15 +8,11 @@ import { createGallery, deleteGallery } from "@/server/galleries";
 
 const createForm = z.object({
   title: z.string().trim().min(1).max(200),
-  password: z.string().min(4).max(100).optional().or(z.literal("").transform(() => undefined)),
 });
 
 export async function createGalleryAction(formData: FormData) {
   const studio = await requireStudio();
-  const data = createForm.parse({
-    title: formData.get("title"),
-    password: formData.get("password") ?? "",
-  });
+  const data = createForm.parse({ title: formData.get("title") });
   await createGallery(db, studio.id, data);
   revalidatePath("/admin/galleries");
 }

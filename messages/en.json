@@ -10,7 +10,6 @@
     "status": { "draft": "Draft", "published": "Published", "archived": "Archived" },
     "newGallery": "New gallery",
     "galleryTitle": "Title",
-    "passwordOptional": "Password (optional, min 4)",
     "create": "Create",
     "delete": "Delete",
     "empty": "No galleries match.",

@@ -10,7 +10,6 @@
     "status": { "draft": "Borrador", "published": "Publicada", "archived": "Archivada" },
     "newGallery": "Nueva galería",
     "galleryTitle": "Título",
-    "passwordOptional": "Contraseña (opcional, mín. 4)",
     "create": "Crear",
     "delete": "Eliminar",
     "empty": "No hay galerías que coincidan.",

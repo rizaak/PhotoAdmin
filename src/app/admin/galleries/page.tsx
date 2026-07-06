@@ -66,7 +66,6 @@ export default async function GalleriesPage({
       <form action={createGalleryAction} className="flex max-w-md flex-col gap-2 rounded border bg-white p-4">
         <h2 className="font-medium">{t("newGallery")}</h2>
         <input name="title" required placeholder={t("galleryTitle")} className="rounded border px-3 py-1.5 text-sm" />
-        <input name="password" minLength={4} placeholder={t("passwordOptional")} className="rounded border px-3 py-1.5 text-sm" />
         <button className="self-start rounded bg-neutral-900 px-3 py-1.5 text-sm text-white">{t("create")}</button>
       </form>
     </div>
