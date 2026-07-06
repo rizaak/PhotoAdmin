@@ -1,0 +1,34 @@
+import { describe, it, expect } from "vitest";
+import sharp from "sharp";
+import { processImage } from "@/server/images";
+
+async function makeJpeg(width: number, height: number): Promise<Buffer> {
+  return sharp({
+    create: { width, height, channels: 3, background: { r: 180, g: 40, b: 40 } },
+  }).jpeg().toBuffer();
+}
+
+describe("processImage", () => {
+  it("generates 400px thumb and 2048px web derivatives and reports dimensions", async () => {
+    const out = await processImage(await makeJpeg(3000, 2000));
+    expect(out.width).toBe(3000);
+    expect(out.height).toBe(2000);
+    const thumb = await sharp(out.thumb).metadata();
+    const web = await sharp(out.web).metadata();
+    expect(Math.max(thumb.width!, thumb.height!)).toBe(400);
+    expect(Math.max(web.width!, web.height!)).toBe(2048);
+    expect(out.takenAt).toBeNull(); // imagen sintética sin EXIF
+  });
+
+  it("never enlarges small images", async () => {
+    const out = await processImage(await makeJpeg(300, 200));
+    const thumb = await sharp(out.thumb).metadata();
+    const web = await sharp(out.web).metadata();
+    expect(thumb.width).toBe(300);
+    expect(web.width).toBe(300);
+  });
+
+  it("rejects non-image buffers", async () => {
+    await expect(processImage(Buffer.from("not an image"))).rejects.toThrow("INVALID_IMAGE");
+  });
+});
