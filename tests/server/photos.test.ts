@@ -49,10 +49,11 @@ describe("photos domain", () => {
     const p = await registerUpload(db, studio.id, gallery.id, upload());
     const done = await completeProcessing(db, studio.id, p.id, {
       width: 3000, height: 2000, takenAt: new Date("2026-05-01T10:00:00Z"),
-      thumbKey: "k/thumb.jpg", webKey: "k/web.jpg", sizeDerivativesBytes: 500,
+      thumbKey: "k/thumb.jpg", webKey: "k/web.jpg", sizeDerivativesBytes: 500, sizeOriginalBytes: 1000,
     });
     expect(done.status).toBe("ready");
     expect(done.width).toBe(3000);
+    expect(done.sizeOriginalBytes).toBe(1000);
 
     const p2 = await registerUpload(db, studio.id, gallery.id, upload("b.jpg"));
     await markPhotoError(db, studio.id, p2.id);
@@ -64,10 +65,10 @@ describe("photos domain", () => {
     const a = await registerUpload(db, studio.id, gallery.id, upload("bbb.jpg"));
     const b = await registerUpload(db, studio.id, gallery.id, upload("aaa.jpg"));
     await completeProcessing(db, studio.id, a.id, {
-      width: 1, height: 1, takenAt: new Date("2026-01-02"), thumbKey: "t", webKey: "w", sizeDerivativesBytes: 1,
+      width: 1, height: 1, takenAt: new Date("2026-01-02"), thumbKey: "t", webKey: "w", sizeDerivativesBytes: 1, sizeOriginalBytes: 1000,
     });
     await completeProcessing(db, studio.id, b.id, {
-      width: 1, height: 1, takenAt: new Date("2026-01-01"), thumbKey: "t", webKey: "w", sizeDerivativesBytes: 1,
+      width: 1, height: 1, takenAt: new Date("2026-01-01"), thumbKey: "t", webKey: "w", sizeDerivativesBytes: 1, sizeOriginalBytes: 1000,
     });
 
     // capture (default): b (01-01) antes que a (01-02)
@@ -98,7 +99,7 @@ describe("photos domain", () => {
     const { db, studio, gallery } = await setup();
     const p = await registerUpload(db, studio.id, gallery.id, upload());
     await completeProcessing(db, studio.id, p.id, {
-      width: 1, height: 1, takenAt: null, thumbKey: "k/thumb.jpg", webKey: "k/web.jpg", sizeDerivativesBytes: 1,
+      width: 1, height: 1, takenAt: null, thumbKey: "k/thumb.jpg", webKey: "k/web.jpg", sizeDerivativesBytes: 1, sizeOriginalBytes: 1000,
     });
 
     await setPhotosPublished(db, studio.id, gallery.id, [p.id], false);
@@ -121,7 +122,7 @@ describe("photos domain", () => {
     const other = await createGallery(db, studio.id, { title: "Otra" });
     const p1 = await registerUpload(db, studio.id, gallery.id, upload());
     await completeProcessing(db, studio.id, p1.id, {
-      width: 1, height: 1, takenAt: null, thumbKey: "t", webKey: "w", sizeDerivativesBytes: 200,
+      width: 1, height: 1, takenAt: null, thumbKey: "t", webKey: "w", sizeDerivativesBytes: 200, sizeOriginalBytes: 1000,
     });
     await registerUpload(db, studio.id, other.id, { ...upload("x.jpg"), size: 5000 });
 
@@ -139,7 +140,7 @@ describe("photos domain", () => {
     await expect(registerUpload(db, intruder.id, gallery.id, upload())).rejects.toThrow("NOT_FOUND");
     await expect(getOwnedPhoto(db, intruder.id, p.id)).rejects.toThrow("NOT_FOUND");
     await expect(completeProcessing(db, intruder.id, p.id, {
-      width: 1, height: 1, takenAt: null, thumbKey: "t", webKey: "w", sizeDerivativesBytes: 1,
+      width: 1, height: 1, takenAt: null, thumbKey: "t", webKey: "w", sizeDerivativesBytes: 1, sizeOriginalBytes: 1000,
     })).rejects.toThrow("NOT_FOUND");
     await expect(markPhotoError(db, intruder.id, p.id)).rejects.toThrow("NOT_FOUND");
     await expect(movePhotos(db, intruder.id, gallery.id, [p.id], null)).rejects.toThrow("NOT_FOUND");

@@ -57,7 +57,10 @@ export async function getOwnedPhoto(db: Db, studioId: string, photoId: string): 
 
 export async function completeProcessing(
   db: Db, studioId: string, photoId: string,
-  result: { width: number; height: number; takenAt: Date | null; thumbKey: string; webKey: string; sizeDerivativesBytes: number },
+  result: {
+    width: number; height: number; takenAt: Date | null; thumbKey: string; webKey: string;
+    sizeDerivativesBytes: number; sizeOriginalBytes: number;
+  },
 ): Promise<Photo> {
   await getOwnedPhoto(db, studioId, photoId);
   const [photo] = await db.update(photos).set({
@@ -68,6 +71,7 @@ export async function completeProcessing(
     thumbKey: result.thumbKey,
     webKey: result.webKey,
     sizeDerivativesBytes: result.sizeDerivativesBytes,
+    sizeOriginalBytes: result.sizeOriginalBytes,
   }).where(eq(photos.id, photoId)).returning();
   return photo;
 }
