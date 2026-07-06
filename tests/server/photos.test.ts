@@ -17,7 +17,7 @@ async function setup() {
 }
 
 const upload = (name = "IMG_0001.jpg") => ({
-  filename: name, size: 1000, contentType: "image/jpeg", sectionId: null,
+  filename: name, size: 1000, contentType: "image/jpeg" as const, sectionId: null,
 });
 
 describe("photos domain", () => {
@@ -38,7 +38,7 @@ describe("photos domain", () => {
 
   it("rejects bad content types and oversized files", async () => {
     const { db, studio, gallery } = await setup();
-    await expect(registerUpload(db, studio.id, gallery.id, { ...upload(), contentType: "video/mp4" }))
+    await expect(registerUpload(db, studio.id, gallery.id, { ...upload(), contentType: "video/mp4" as never }))
       .rejects.toThrow();
     await expect(registerUpload(db, studio.id, gallery.id, { ...upload(), size: 101 * 1024 * 1024 }))
       .rejects.toThrow();
