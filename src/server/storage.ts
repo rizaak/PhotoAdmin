@@ -27,15 +27,17 @@ function r2(): S3Client {
 const bucket = () => required("R2_BUCKET");
 
 export async function presignUpload(key: string, contentType: string, expiresIn = 600): Promise<string> {
+  const clamped = Math.min(expiresIn, 600);
   return getSignedUrl(
     r2(),
     new PutObjectCommand({ Bucket: bucket(), Key: key, ContentType: contentType }),
-    { expiresIn },
+    { expiresIn: clamped },
   );
 }
 
 export async function presignDownload(key: string, expiresIn = 900): Promise<string> {
-  return getSignedUrl(r2(), new GetObjectCommand({ Bucket: bucket(), Key: key }), { expiresIn });
+  const clamped = Math.min(expiresIn, 900);
+  return getSignedUrl(r2(), new GetObjectCommand({ Bucket: bucket(), Key: key }), { expiresIn: clamped });
 }
 
 export async function getObjectBuffer(key: string): Promise<Buffer> {

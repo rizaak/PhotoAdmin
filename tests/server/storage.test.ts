@@ -22,4 +22,10 @@ describe("storage presigning (offline)", () => {
     expect(url).toContain("/test-bucket/k/thumb.jpg");
     expect(url).toContain("X-Amz-Expires=900");
   });
+
+  it("clamps caller-supplied expiry to the security ceiling", async () => {
+    const { presignUpload, presignDownload } = await import("@/server/storage");
+    expect(await presignUpload("k/a.jpg", "image/jpeg", 99999)).toContain("X-Amz-Expires=600");
+    expect(await presignDownload("k/a.jpg", 99999)).toContain("X-Amz-Expires=900");
+  });
 });
