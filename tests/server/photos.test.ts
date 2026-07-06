@@ -141,6 +141,7 @@ describe("photos domain", () => {
     await expect(completeProcessing(db, intruder.id, p.id, {
       width: 1, height: 1, takenAt: null, thumbKey: "t", webKey: "w", sizeDerivativesBytes: 1,
     })).rejects.toThrow("NOT_FOUND");
+    await expect(markPhotoError(db, intruder.id, p.id)).rejects.toThrow("NOT_FOUND");
     await expect(movePhotos(db, intruder.id, gallery.id, [p.id], null)).rejects.toThrow("NOT_FOUND");
     await expect(setPhotosPublished(db, intruder.id, gallery.id, [p.id], false)).rejects.toThrow("NOT_FOUND");
     await expect(deletePhotos(db, intruder.id, gallery.id, [p.id])).rejects.toThrow("NOT_FOUND");
