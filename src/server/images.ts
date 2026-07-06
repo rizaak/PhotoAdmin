@@ -1,4 +1,4 @@
-import sharp from "sharp";
+import sharp, { type Metadata } from "sharp";
 import exifReader from "exif-reader";
 
 export type ProcessedImage = {
@@ -13,7 +13,7 @@ const THUMB_SIZE = 400;
 const WEB_SIZE = 2048;
 
 export async function processImage(original: Buffer): Promise<ProcessedImage> {
-  let meta: sharp.Metadata;
+  let meta: Metadata;
   try {
     meta = await sharp(original).metadata();
   } catch {
