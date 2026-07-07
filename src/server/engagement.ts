@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "@/db";
 import { photos, likes, comments, galleryClients, activityEvents, sections } from "@/db/schema";
@@ -46,13 +46,20 @@ export async function addComment(
 ): Promise<{ id: string; body: string; createdAt: Date; created: boolean }> {
   const text = bodySchema.parse(body);
   await assertEngageable(db, clientId, galleryId, photoId);
-  const [existing] = await db.select({ id: comments.id }).from(comments)
-    .where(and(eq(comments.clientId, clientId), eq(comments.photoId, photoId)));
   const [comment] = await db.insert(comments)
     .values({ clientId, photoId, body: text })
-    .onConflictDoUpdate({ target: [comments.clientId, comments.photoId], set: { body: text, createdAt: new Date() } })
-    .returning();
-  const created = !existing;
+    .onConflictDoUpdate({
+      target: [comments.clientId, comments.photoId],
+      set: { body: text, createdAt: new Date() },
+    })
+    .returning({
+      id: comments.id,
+      body: comments.body,
+      createdAt: comments.createdAt,
+      // xmax = 0 solo en filas recién insertadas; en updates por conflicto es != 0
+      inserted: sql<boolean>`(xmax = 0)`,
+    });
+  const created = comment.inserted;
   if (created) {
     await db.insert(activityEvents).values({ galleryId, clientId, photoId, type: "comment" });
   }
