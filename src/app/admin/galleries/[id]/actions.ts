@@ -8,6 +8,10 @@ import { updateGallerySettings } from "@/server/galleries";
 import {
   createSection, renameSection, setSectionVisible, reorderSections, deleteSection, listSections,
 } from "@/server/sections";
+import {
+  movePhotos, setPhotosPublished, deletePhotos, setCoverPhoto,
+} from "@/server/photos";
+import { deleteObjects } from "@/server/storage";
 
 const id = z.string().uuid();
 
@@ -90,4 +94,36 @@ export async function deleteSectionAction(formData: FormData) {
   const galleryId = id.parse(formData.get("galleryId"));
   await deleteSection(db, studio.id, id.parse(formData.get("sectionId")));
   revalidatePath(`/admin/galleries/${galleryId}`);
+}
+
+const photoIds = z.array(z.string().uuid()).min(1).max(500);
+const photoBatch = z.object({ galleryId: z.string().uuid(), photoIds });
+
+export async function movePhotosAction(input: { galleryId: string; photoIds: string[]; sectionId: string | null }) {
+  const studio = await requireStudio();
+  const data = photoBatch.extend({ sectionId: z.string().uuid().nullable() }).parse(input);
+  await movePhotos(db, studio.id, data.galleryId, data.photoIds, data.sectionId);
+  revalidatePath(`/admin/galleries/${data.galleryId}`);
+}
+
+export async function setPublishedAction(input: { galleryId: string; photoIds: string[]; published: boolean }) {
+  const studio = await requireStudio();
+  const data = photoBatch.extend({ published: z.boolean() }).parse(input);
+  await setPhotosPublished(db, studio.id, data.galleryId, data.photoIds, data.published);
+  revalidatePath(`/admin/galleries/${data.galleryId}`);
+}
+
+export async function deletePhotosAction(input: { galleryId: string; photoIds: string[] }) {
+  const studio = await requireStudio();
+  const data = photoBatch.parse(input);
+  const keys = await deletePhotos(db, studio.id, data.galleryId, data.photoIds);
+  await deleteObjects(keys);
+  revalidatePath(`/admin/galleries/${data.galleryId}`);
+}
+
+export async function setCoverAction(input: { galleryId: string; photoId: string }) {
+  const studio = await requireStudio();
+  const data = z.object({ galleryId: z.string().uuid(), photoId: z.string().uuid() }).parse(input);
+  await setCoverPhoto(db, studio.id, data.galleryId, data.photoId);
+  revalidatePath(`/admin/galleries/${data.galleryId}`);
 }

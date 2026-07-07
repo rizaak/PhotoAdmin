@@ -51,6 +51,23 @@
       "processing": "Processing…",
       "done": "Ready",
       "error": "Error"
+    },
+    "photos": {
+      "title": "Photos",
+      "empty": "No photos yet. Upload the first ones above.",
+      "noSection": "No section",
+      "selected": "{count} selected",
+      "moveTo": "Move to…",
+      "move": "Move",
+      "publish": "Publish",
+      "hide": "Hide",
+      "delete": "Delete",
+      "deleteConfirm": "Delete {count} photo(s)? This action cannot be undone.",
+      "setCover": "Set as cover",
+      "hiddenBadge": "hidden",
+      "processingBadge": "processing",
+      "errorBadge": "error",
+      "clear": "Clear selection"
     }
   }
 }

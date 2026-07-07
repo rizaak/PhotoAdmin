@@ -51,6 +51,23 @@
       "processing": "Procesando…",
       "done": "Lista",
       "error": "Error"
+    },
+    "photos": {
+      "title": "Fotos",
+      "empty": "Aún no hay fotos. Sube las primeras arriba.",
+      "noSection": "Sin sección",
+      "selected": "{count} seleccionadas",
+      "moveTo": "Mover a…",
+      "move": "Mover",
+      "publish": "Publicar",
+      "hide": "Ocultar",
+      "delete": "Eliminar",
+      "deleteConfirm": "¿Eliminar {count} foto(s)? Esta acción no se puede deshacer.",
+      "setCover": "Usar de portada",
+      "hiddenBadge": "oculta",
+      "processingBadge": "procesando",
+      "errorBadge": "error",
+      "clear": "Quitar selección"
     }
   }
 }

@@ -4,10 +4,14 @@ import { db } from "@/db";
 import { requireStudio } from "@/server/auth";
 import { getGallery } from "@/server/galleries";
 import { listSections } from "@/server/sections";
+import { listGalleryPhotos } from "@/server/photos";
+import { presignDownload } from "@/server/storage";
 import {
   updateGalleryAction, addSectionAction, renameSectionAction,
   toggleSectionAction, moveSectionAction, deleteSectionAction,
 } from "./actions";
+import { PhotoUploader } from "./photo-uploader";
+import { PhotoManager, type PhotoView } from "./photo-manager";
 
 export default async function GalleryDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -20,6 +24,20 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
   const gallery = await getGallery(db, studio.id, id).catch(() => null);
   if (!gallery) notFound();
   const sectionList = await listSections(db, studio.id, id);
+  const photoRows = await listGalleryPhotos(db, studio.id, id);
+  const photoViews: PhotoView[] = await Promise.all(
+    photoRows.map(async (p) => ({
+      id: p.id,
+      filename: p.filename,
+      sectionId: p.sectionId,
+      published: p.published,
+      status: p.status,
+      thumbUrl: p.thumbKey ? await presignDownload(p.thumbKey) : null,
+      webUrl: p.webKey ? await presignDownload(p.webKey) : null,
+    })),
+  );
+  const tp = await getTranslations("galleryDetail.photos");
+  const tu = await getTranslations("galleryDetail.upload");
 
   const check = "h-4 w-4 accent-neutral-900";
   const input = "rounded border px-3 py-1.5 text-sm";
@@ -153,6 +171,33 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
           <input name="name" required placeholder={t("sectionName")} className={input} />
           <button className="rounded bg-neutral-900 px-3 py-1.5 text-sm text-white">{t("add")}</button>
         </form>
+      </section>
+
+      <section className="rounded border bg-white p-4">
+        <h2 className="mb-4 font-medium">{tp("title")}</h2>
+        <div className="mb-6">
+          <PhotoUploader
+            galleryId={gallery.id}
+            sections={sectionList.map((s) => ({ id: s.id, name: s.name }))}
+            labels={{
+              hint: tu("hint"), select: tu("select"), target: tu("target"), noSection: tu("noSection"),
+              uploading: tu("uploading"), processing: tu("processing"), done: tu("done"), error: tu("error"),
+            }}
+          />
+        </div>
+        <PhotoManager
+          galleryId={gallery.id}
+          photos={photoViews}
+          sections={sectionList.map((s) => ({ id: s.id, name: s.name }))}
+          coverPhotoId={gallery.coverPhotoId}
+          labels={{
+            empty: tp("empty"), noSection: tp("noSection"), selected: tp("selected"),
+            moveTo: tp("moveTo"), move: tp("move"), publish: tp("publish"), hide: tp("hide"),
+            delete: tp("delete"), deleteConfirm: tp("deleteConfirm"), setCover: tp("setCover"),
+            hiddenBadge: tp("hiddenBadge"), processingBadge: tp("processingBadge"),
+            errorBadge: tp("errorBadge"), clear: tp("clear"),
+          }}
+        />
       </section>
     </div>
   );
