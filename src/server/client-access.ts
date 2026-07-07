@@ -3,7 +3,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import type { Db } from "@/db";
 import {
-  galleries, clients, galleryClients, activityEvents, sections, comments, likes, photos,
+  galleries, clients, galleryClients, activityEvents, sections, comments, likes,
   type Gallery, type Section, type Photo,
 } from "@/db/schema";
 import { listPhotosForGallery } from "./photos";

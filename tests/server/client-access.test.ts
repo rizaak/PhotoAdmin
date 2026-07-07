@@ -4,6 +4,7 @@ import { createGallery, updateGallerySettings } from "@/server/galleries";
 import { createSection, setSectionVisible } from "@/server/sections";
 import { registerUpload, completeProcessing, setPhotosPublished } from "@/server/photos";
 import { getPublicGallery, accessGallery, getClientGalleryData } from "@/server/client-access";
+import { toggleLike, addComment } from "@/server/engagement";
 import { activityEvents } from "@/db/schema";
 
 async function publishedGallery(db: Awaited<ReturnType<typeof createTestDb>>, studioId: string, password?: string) {
@@ -53,5 +54,29 @@ describe("client access", () => {
     expect(events.filter((e) => e.type === "access")).toHaveLength(2);
   });
 
-  it.todo("returns only visible sections, published+ready photos, and only the client's own activity");
+  it("returns only visible sections, published+ready photos, and only the client's own activity", async () => {
+    const db = await createTestDb();
+    const studio = await seedStudio(db);
+    const g = await publishedGallery(db, studio.id);
+    const visible = await createSection(db, studio.id, g.id, "Visible");
+    const hidden = await createSection(db, studio.id, g.id, "Oculta");
+    await setSectionVisible(db, studio.id, hidden.id, false);
+
+    const shown = await readyPhoto(db, studio.id, g.id, "shown.jpg");
+    const unpublished = await readyPhoto(db, studio.id, g.id, "hidden.jpg");
+    await setPhotosPublished(db, studio.id, g.id, [unpublished.id], false);
+    await registerUpload(db, studio.id, g.id, { filename: "processing.jpg", size: 5, contentType: "image/jpeg", sectionId: null });
+
+    const ana = await accessGallery(db, g.slug, { email: "ana@x.com" });
+    const beto = await accessGallery(db, g.slug, { email: "beto@x.com" });
+    await toggleLike(db, beto.clientId, g.id, shown.id);
+    await addComment(db, beto.clientId, g.id, shown.id, "de beto");
+    await toggleLike(db, ana.clientId, g.id, shown.id);
+
+    const data = await getClientGalleryData(db, g.id, ana.clientId);
+    expect(data.sections.map((s) => s.id)).toEqual([visible.id]);
+    expect(data.photos.map((p) => p.id)).toEqual([shown.id]);
+    expect(data.likedPhotoIds).toEqual([shown.id]); // solo el like de ana
+    expect(data.commentsByPhoto[shown.id] ?? []).toHaveLength(0); // el comentario de beto no se ve
+  });
 });
