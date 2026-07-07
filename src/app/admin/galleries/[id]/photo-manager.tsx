@@ -25,6 +25,8 @@ type Labels = {
 
 type Rect = { x: number; y: number; w: number; h: number };
 
+const MOVE_PLACEHOLDER = "__placeholder";
+
 export function PhotoManager({
   galleryId, photos, sections, coverPhotoId, labels,
 }: {
@@ -36,7 +38,7 @@ export function PhotoManager({
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [lightbox, setLightbox] = useState<PhotoView | null>(null);
-  const [moveTarget, setMoveTarget] = useState<string>("");
+  const [moveTarget, setMoveTarget] = useState<string>(MOVE_PLACEHOLDER);
   const [pending, setPending] = useState(false);
   const [band, setBand] = useState<Rect | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -125,12 +127,13 @@ export function PhotoManager({
         <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 rounded border bg-white p-2 text-sm shadow-sm">
           <span className="font-medium">{labels.selected.replace("{count}", String(selected.size))}</span>
           <select value={moveTarget} onChange={(e) => setMoveTarget(e.target.value)} className="rounded border px-2 py-1">
+            <option value={MOVE_PLACEHOLDER} disabled>{labels.moveTo}</option>
             <option value="">{labels.noSection}</option>
             {sections.map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>
-          <button disabled={pending} className="rounded border px-2 py-1"
+          <button disabled={pending || moveTarget === MOVE_PLACEHOLDER} className="rounded border px-2 py-1"
             onClick={() => run(() => movePhotosAction({ galleryId, photoIds: ids, sectionId: moveTarget || null }))}>
             {labels.move}
           </button>

@@ -2,7 +2,7 @@ import { and, desc, eq, ilike } from "drizzle-orm";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import type { Db } from "@/db";
-import { galleries, type Gallery, type GalleryStatus } from "@/db/schema";
+import { galleries, photos, type Gallery, type GalleryStatus } from "@/db/schema";
 import { makeSlug } from "./slug";
 
 const createGallerySchema = z.object({
@@ -69,9 +69,16 @@ export async function updateGallerySettings(
   return gallery;
 }
 
-export async function deleteGallery(db: Db, studioId: string, galleryId: string): Promise<void> {
+export async function deleteGallery(db: Db, studioId: string, galleryId: string): Promise<string[]> {
+  await getGallery(db, studioId, galleryId);
+  const rows = await db.select({
+    originalKey: photos.originalKey, thumbKey: photos.thumbKey, webKey: photos.webKey,
+  }).from(photos).where(eq(photos.galleryId, galleryId));
+  const keys = rows.flatMap((r) => [r.originalKey, r.thumbKey, r.webKey].filter((k): k is string => !!k));
+
   const deleted = await db.delete(galleries)
     .where(and(eq(galleries.id, galleryId), eq(galleries.studioId, studioId)))
     .returning({ id: galleries.id });
   if (deleted.length === 0) throw new Error("NOT_FOUND");
+  return keys;
 }

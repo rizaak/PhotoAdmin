@@ -25,7 +25,7 @@ export async function POST(
 
   try {
     const photo = await registerUpload(db, studioId, galleryId, body);
-    const uploadUrl = await presignUpload(photo.originalKey, body.contentType);
+    const uploadUrl = await presignUpload(photo.originalKey, body.contentType, undefined, photo.sizeOriginalBytes);
     return NextResponse.json({ photoId: photo.id, uploadUrl });
   } catch (e) {
     if (e instanceof z.ZodError) return NextResponse.json({ error: "invalid_body" }, { status: 400 });

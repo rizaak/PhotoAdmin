@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { requireStudio } from "@/server/auth";
 import { createGallery, deleteGallery } from "@/server/galleries";
+import { deleteObjects } from "@/server/storage";
 
 const createForm = z.object({
   title: z.string().trim().min(1).max(200),
@@ -20,6 +21,7 @@ export async function createGalleryAction(formData: FormData) {
 export async function deleteGalleryAction(formData: FormData) {
   const studio = await requireStudio();
   const galleryId = z.string().uuid().parse(formData.get("galleryId"));
-  await deleteGallery(db, studio.id, galleryId);
+  const keys = await deleteGallery(db, studio.id, galleryId);
+  await deleteObjects(keys);
   revalidatePath("/admin/galleries");
 }

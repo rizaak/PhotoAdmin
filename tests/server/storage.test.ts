@@ -28,4 +28,11 @@ describe("storage presigning (offline)", () => {
     expect(await presignUpload("k/a.jpg", "image/jpeg", 99999)).toContain("X-Amz-Expires=600");
     expect(await presignDownload("k/a.jpg", 99999)).toContain("X-Amz-Expires=900");
   });
+
+  it("signs content-length when provided, enforcing the declared upload size", async () => {
+    const { presignUpload } = await import("@/server/storage");
+    const url = await presignUpload("k/a.jpg", "image/jpeg", 600, 12345);
+    const signedHeaders = decodeURIComponent(new URL(url).searchParams.get("X-Amz-SignedHeaders") ?? "");
+    expect(signedHeaders).toContain("content-length");
+  });
 });

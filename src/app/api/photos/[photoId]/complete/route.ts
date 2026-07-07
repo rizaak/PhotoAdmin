@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
 import { requireStudio } from "@/server/auth";
-import { getOwnedPhoto, completeProcessing, markPhotoError } from "@/server/photos";
+import { getOwnedPhoto, completeProcessing, markPhotoError, MAX_UPLOAD_BYTES } from "@/server/photos";
 import { getObjectBuffer, putObjectBuffer } from "@/server/storage";
 import { processImage } from "@/server/images";
 
@@ -34,6 +34,7 @@ export async function POST(
 
   try {
     const original = await getObjectBuffer(photo.originalKey);
+    if (original.length > MAX_UPLOAD_BYTES) throw new Error("FILE_TOO_LARGE");
     const processed = await processImage(original);
     const dir = photo.originalKey.split("/").slice(0, -1).join("/");
     const thumbKey = `${dir}/thumb.jpg`;
@@ -52,11 +53,13 @@ export async function POST(
       sizeOriginalBytes: original.length,
     });
     return NextResponse.json({ status: "ready" });
-  } catch {
+  } catch (e) {
+    console.error("photo processing failed", photoId, e);
     try {
       await markPhotoError(db, studioId, photoId);
-    } catch {
+    } catch (err) {
       // la foto pudo ser eliminada concurrentemente; la respuesta 422 sigue siendo correcta
+      console.error("markPhotoError failed", photoId, err);
     }
     return NextResponse.json({ status: "error" }, { status: 422 });
   }

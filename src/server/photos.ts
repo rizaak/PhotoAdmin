@@ -5,7 +5,7 @@ import type { Db } from "@/db";
 import { galleries, photos, sections, type Photo } from "@/db/schema";
 import { getGallery } from "./galleries";
 
-const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+export const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 
 const registerSchema = z.object({
   filename: z.string().trim().min(1).max(200),

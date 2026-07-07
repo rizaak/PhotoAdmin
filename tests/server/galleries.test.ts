@@ -4,6 +4,7 @@ import { createTestDb, seedStudio } from "../helpers/db";
 import {
   createGallery, listGalleries, getGallery, updateGallerySettings, deleteGallery,
 } from "@/server/galleries";
+import { photos } from "@/db/schema";
 
 describe("galleries domain", () => {
   it("creates a gallery with defaults and hashed optional password", async () => {
@@ -61,11 +62,32 @@ describe("galleries domain", () => {
     expect(await listGalleries(db, b.id)).toHaveLength(0);
   });
 
-  it("deletes a gallery", async () => {
+  it("deletes a gallery and returns no R2 keys when it has no photos", async () => {
     const db = await createTestDb();
     const studio = await seedStudio(db);
     const g = await createGallery(db, studio.id, { title: "Temporal" });
-    await deleteGallery(db, studio.id, g.id);
+    const keys = await deleteGallery(db, studio.id, g.id);
+    expect(keys).toEqual([]);
+    await expect(getGallery(db, studio.id, g.id)).rejects.toThrow("NOT_FOUND");
+  });
+
+  it("deletes a gallery and returns its photos' R2 keys for cleanup", async () => {
+    const db = await createTestDb();
+    const studio = await seedStudio(db);
+    const g = await createGallery(db, studio.id, { title: "Con fotos" });
+    await db.insert(photos).values({
+      galleryId: g.id,
+      filename: "a.jpg",
+      originalKey: "studios/x/galleries/g/photo/orig-a.jpg",
+      thumbKey: "studios/x/galleries/g/photo/thumb.jpg",
+      webKey: "studios/x/galleries/g/photo/web.jpg",
+    });
+
+    const keys = await deleteGallery(db, studio.id, g.id);
+    expect(keys).toContain("studios/x/galleries/g/photo/orig-a.jpg");
+    expect(keys).toContain("studios/x/galleries/g/photo/thumb.jpg");
+    expect(keys).toContain("studios/x/galleries/g/photo/web.jpg");
+    expect(keys).toHaveLength(3);
     await expect(getGallery(db, studio.id, g.id)).rejects.toThrow("NOT_FOUND");
   });
 });

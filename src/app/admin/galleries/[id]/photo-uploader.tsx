@@ -109,7 +109,11 @@ export function PhotoUploader({
         </button>
         <input
           ref={inputRef} type="file" multiple accept="image/jpeg,image/png,image/webp"
-          className="hidden" onChange={(e) => void handleFiles(e.target.files)}
+          className="hidden"
+          onChange={(e) => {
+            void handleFiles(e.target.files);
+            e.target.value = "";
+          }}
         />
       </div>
 

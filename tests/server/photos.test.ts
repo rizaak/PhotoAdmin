@@ -7,7 +7,7 @@ import {
   registerUpload, getOwnedPhoto, completeProcessing, markPhotoError, listGalleryPhotos,
   movePhotos, setPhotosPublished, deletePhotos, setCoverPhoto, storageTotals, sanitizeFilename,
 } from "@/server/photos";
-import { galleries } from "@/db/schema";
+import { photos } from "@/db/schema";
 
 async function setup() {
   const db = await createTestDb();
@@ -62,8 +62,10 @@ describe("photos domain", () => {
 
   it("lists photos ordered by gallery photoOrder", async () => {
     const { db, studio, gallery } = await setup();
-    const a = await registerUpload(db, studio.id, gallery.id, upload("bbb.jpg"));
-    const b = await registerUpload(db, studio.id, gallery.id, upload("aaa.jpg"));
+    // filename "aaa" pero tomada después (01-02); filename "bbb" tomada antes (01-01):
+    // así capture order y filename order difieren y el test no es tautológico.
+    const a = await registerUpload(db, studio.id, gallery.id, upload("aaa.jpg"));
+    const b = await registerUpload(db, studio.id, gallery.id, upload("bbb.jpg"));
     await completeProcessing(db, studio.id, a.id, {
       width: 1, height: 1, takenAt: new Date("2026-01-02"), thumbKey: "t", webKey: "w", sizeDerivativesBytes: 1, sizeOriginalBytes: 1000,
     });
@@ -75,6 +77,12 @@ describe("photos domain", () => {
     expect((await listGalleryPhotos(db, studio.id, gallery.id)).map((p) => p.id)).toEqual([b.id, a.id]);
     // filename: aaa antes que bbb
     await updateGallerySettings(db, studio.id, gallery.id, { photoOrder: "filename" });
+    expect((await listGalleryPhotos(db, studio.id, gallery.id)).map((p) => p.id)).toEqual([a.id, b.id]);
+
+    // manual: posiciones explícitas invierten el orden de filename
+    await updateGallerySettings(db, studio.id, gallery.id, { photoOrder: "manual" });
+    await db.update(photos).set({ position: 1 }).where(eq(photos.id, a.id));
+    await db.update(photos).set({ position: 0 }).where(eq(photos.id, b.id));
     expect((await listGalleryPhotos(db, studio.id, gallery.id)).map((p) => p.id)).toEqual([b.id, a.id]);
   });
 
