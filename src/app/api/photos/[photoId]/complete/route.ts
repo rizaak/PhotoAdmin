@@ -53,7 +53,11 @@ export async function POST(
     });
     return NextResponse.json({ status: "ready" });
   } catch {
-    await markPhotoError(db, studioId, photoId);
+    try {
+      await markPhotoError(db, studioId, photoId);
+    } catch {
+      // la foto pudo ser eliminada concurrentemente; la respuesta 422 sigue siendo correcta
+    }
     return NextResponse.json({ status: "error" }, { status: 422 });
   }
 }
