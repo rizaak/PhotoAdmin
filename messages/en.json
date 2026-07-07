@@ -14,7 +14,8 @@
     "delete": "Delete",
     "empty": "No galleries match.",
     "created": "Created",
-    "deleteConfirm": "Delete this gallery? This action cannot be undone."
+    "deleteConfirm": "Delete this gallery? This action cannot be undone.",
+    "storageUsed": "Storage: {size}"
   },
   "galleryDetail": {
     "settings": "Settings",

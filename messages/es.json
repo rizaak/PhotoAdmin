@@ -14,7 +14,8 @@
     "delete": "Eliminar",
     "empty": "No hay galerías que coincidan.",
     "created": "Creada",
-    "deleteConfirm": "¿Eliminar esta galería? Esta acción no se puede deshacer."
+    "deleteConfirm": "¿Eliminar esta galería? Esta acción no se puede deshacer.",
+    "storageUsed": "Almacenamiento: {size}"
   },
   "galleryDetail": {
     "settings": "Configuración",

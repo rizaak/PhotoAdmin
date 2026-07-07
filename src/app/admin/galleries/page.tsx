@@ -3,6 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { db } from "@/db";
 import { requireStudio } from "@/server/auth";
 import { listGalleries } from "@/server/galleries";
+import { storageTotals } from "@/server/photos";
+import { formatBytes } from "@/lib/format";
 import type { GalleryStatus } from "@/db/schema";
 import { createGalleryAction } from "./actions";
 import { DeleteGalleryForm } from "./delete-gallery-form";
@@ -23,10 +25,16 @@ export default async function GalleriesPage({
     ? (params.status as GalleryStatus)
     : undefined;
   const items = await listGalleries(db, studio.id, { search: params.q, status });
+  const totals = await storageTotals(db, studio.id);
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-semibold">{t("title")}</h1>
+      <div className="flex items-baseline justify-between">
+        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        <span className="text-sm text-neutral-500">
+          {t("storageUsed", { size: formatBytes(totals.totalBytes) })}
+        </span>
+      </div>
 
       <form method="GET" className="flex gap-2">
         <input
@@ -52,6 +60,7 @@ export default async function GalleriesPage({
               </Link>
               <p className="text-xs text-neutral-500">
                 {t(`status.${g.status}`)} · {t("created")} {g.createdAt.toISOString().slice(0, 10)}
+                {" · "}{formatBytes(totals.perGallery[g.id] ?? 0)}
               </p>
             </div>
             <DeleteGalleryForm
