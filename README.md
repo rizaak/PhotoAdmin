@@ -32,6 +32,13 @@ Next.js (App Router, TS) · Drizzle + PostgreSQL (Neon) · Auth0 · Cloudflare R
 
 En producción, agregar el dominio de la app a `AllowedOrigins`.
 
+## Acceso de clientes
+
+- Galerías publicadas se comparten en `/g/<slug>`; el cliente deja su email (y contraseña si la galería tiene).
+- `CLIENT_SESSION_SECRET` (obligatoria): `openssl rand -hex 32`.
+- `RESEND_API_KEY` + `RESEND_FROM` (opcionales): emails de actividad al fotógrafo; sin key no se envía nada.
+- Marca de agua: las variantes se generan en la Fase 4 — hasta entonces la vista cliente sirve la versión web limpia.
+
 ## Comandos
 - `npm test` — Vitest (dominio, con PGlite en memoria; no requiere Postgres)
 - `npm run db:generate` — generar migraciones tras cambiar `src/db/schema.ts`
