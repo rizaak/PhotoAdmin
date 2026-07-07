@@ -41,6 +41,16 @@
     "show": "Show", "hide": "Hide",
     "delete": "Delete",
     "noSections": "No sections yet.",
-    "hidden": "hidden"
+    "hidden": "hidden",
+    "upload": {
+      "hint": "Drag photos here or",
+      "select": "choose files",
+      "target": "Upload to",
+      "noSection": "No section",
+      "uploading": "Uploading…",
+      "processing": "Processing…",
+      "done": "Ready",
+      "error": "Error"
+    }
   }
 }

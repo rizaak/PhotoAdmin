@@ -41,6 +41,16 @@
     "show": "Mostrar", "hide": "Ocultar",
     "delete": "Eliminar",
     "noSections": "Aún no hay secciones.",
-    "hidden": "oculta"
+    "hidden": "oculta",
+    "upload": {
+      "hint": "Arrastra fotos aquí o",
+      "select": "elige archivos",
+      "target": "Subir a",
+      "noSection": "Sin sección",
+      "uploading": "Subiendo…",
+      "processing": "Procesando…",
+      "done": "Lista",
+      "error": "Error"
+    }
   }
 }
