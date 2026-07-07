@@ -19,6 +19,7 @@ export const studios = pgTable("studios", {
   slug: text("slug").notNull().unique(),
   logoKey: text("logo_key"),
   auth0UserId: text("auth0_user_id").notNull().unique(),
+  notificationEmail: text("notification_email"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 

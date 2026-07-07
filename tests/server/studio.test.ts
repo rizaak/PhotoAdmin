@@ -13,4 +13,14 @@ describe("ensureStudio", () => {
     expect(second.id).toBe(first.id);
     expect(second.name).toBe("Isaac López"); // no sobreescribe
   });
+
+  it("stores notification email on first login without overwriting later", async () => {
+    const db = await createTestDb();
+    const s1 = await ensureStudio(db, "auth0|mail1", "Isaac", "isaac@example.com");
+    expect(s1.notificationEmail).toBe("isaac@example.com");
+    const s2 = await ensureStudio(db, "auth0|mail1", "Isaac", "otro@example.com");
+    expect(s2.notificationEmail).toBe("isaac@example.com");
+    const s3 = await ensureStudio(db, "auth0|mail2", "Sin Mail");
+    expect(s3.notificationEmail).toBeNull();
+  });
 });

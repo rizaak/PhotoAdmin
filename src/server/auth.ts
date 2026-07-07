@@ -10,5 +10,5 @@ export async function requireStudio(): Promise<Studio> {
     (session.user.name as string | undefined) ??
     (session.user.email as string | undefined) ??
     "Mi Estudio";
-  return ensureStudio(db, session.user.sub, displayName);
+  return ensureStudio(db, session.user.sub, displayName, (session.user.email as string | undefined) ?? null);
 }

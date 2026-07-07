@@ -1,0 +1,1 @@
+ALTER TABLE "studios" ADD COLUMN "notification_email" text;
