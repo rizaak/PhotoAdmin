@@ -3,12 +3,15 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 import { db } from "@/db";
-import { studios } from "@/db/schema";
+import { studios, clients, photos } from "@/db/schema";
 import { accessGallery } from "@/server/client-access";
 import { signClientSession, clientCookieOptions, CLIENT_COOKIE } from "@/server/client-session";
 import { checkRateLimit } from "@/server/rate-limit";
-import { notifyPhotographer, firstAccessEmail } from "@/server/emails";
+import { notifyPhotographer, firstAccessEmail, commentEmail } from "@/server/emails";
+import { requireClientSession } from "@/server/client-auth";
+import { toggleLike, addComment } from "@/server/engagement";
 
 export type EnterState = { error: "invalidPassword" | "tooManyAttempts" | "genericError" } | null;
 
@@ -42,4 +45,30 @@ export async function enterGalleryAction(
   }
 
   redirect(`/g/${slug}`);
+}
+
+const likeInput = z.object({ slug: z.string().min(1), photoId: z.string().uuid() });
+
+export async function toggleLikeAction(input: { slug: string; photoId: string }) {
+  const data = likeInput.parse(input);
+  const { gallery, clientId } = await requireClientSession(data.slug);
+  return toggleLike(db, clientId, gallery.id, data.photoId);
+}
+
+const commentInput = likeInput.extend({ body: z.string().trim().min(1).max(1000) });
+
+export async function addCommentAction(input: { slug: string; photoId: string; body: string }) {
+  const data = commentInput.parse(input);
+  const { gallery, clientId } = await requireClientSession(data.slug);
+  const comment = await addComment(db, clientId, gallery.id, data.photoId, data.body);
+
+  const [studio] = await db.select().from(studios).where(eq(studios.id, gallery.studioId));
+  const [photo] = await db.select({ filename: photos.filename }).from(photos).where(eq(photos.id, data.photoId));
+  const [clientRow] = await db.select({ email: clients.email }).from(clients).where(eq(clients.id, clientId));
+  void notifyPhotographer({
+    to: studio?.notificationEmail ?? null,
+    ...commentEmail(gallery.title, clientRow?.email ?? "cliente", comment.body, photo?.filename ?? ""),
+  }).catch(() => {});
+
+  return { id: comment.id, body: comment.body };
 }
