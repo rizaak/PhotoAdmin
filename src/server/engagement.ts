@@ -26,7 +26,13 @@ export async function toggleLike(
     await db.insert(activityEvents).values({ galleryId, clientId, photoId, type: "like_removed" });
     return { liked: false };
   }
-  await db.insert(likes).values({ clientId, photoId });
+  const inserted = await db.insert(likes).values({ clientId, photoId })
+    .onConflictDoNothing()
+    .returning();
+  if (inserted.length === 0) {
+    // carrera: otro request del mismo cliente ya insertó el like
+    return { liked: true };
+  }
   await db.insert(activityEvents).values({ galleryId, clientId, photoId, type: "like_added" });
   return { liked: true };
 }

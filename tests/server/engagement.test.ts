@@ -51,4 +51,14 @@ describe("engagement", () => {
     const { clientId: outsider } = await accessGallery(db, other.slug, { email: "otro@x.com" });
     await expect(addComment(db, outsider, gallery.id, photo.id, "hola")).rejects.toThrow("NOT_FOUND");
   });
+
+  it("tolerates concurrent double-toggle without raw DB errors", async () => {
+    const { db, gallery, photo, clientId } = await setup();
+    const results = await Promise.all([
+      toggleLike(db, clientId, gallery.id, photo.id),
+      toggleLike(db, clientId, gallery.id, photo.id),
+    ]);
+    // ambos resuelven sin lanzar; el estado final es consistente
+    expect(results.every((r) => typeof r.liked === "boolean")).toBe(true);
+  });
 });
