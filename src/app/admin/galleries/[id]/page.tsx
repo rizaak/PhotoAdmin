@@ -191,9 +191,11 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
           sections={sectionList.map((s) => ({ id: s.id, name: s.name }))}
           coverPhotoId={gallery.coverPhotoId}
           labels={{
-            empty: tp("empty"), noSection: tp("noSection"), selected: tp("selected"),
+            // selected/deleteConfirm son plantillas con {count} que el cliente
+            // interpola; tp() validaría las variables ICU y fallaría sin count.
+            empty: tp("empty"), noSection: tp("noSection"), selected: tp.raw("selected") as string,
             moveTo: tp("moveTo"), move: tp("move"), publish: tp("publish"), hide: tp("hide"),
-            delete: tp("delete"), deleteConfirm: tp("deleteConfirm"), setCover: tp("setCover"),
+            delete: tp("delete"), deleteConfirm: tp.raw("deleteConfirm") as string, setCover: tp("setCover"),
             hiddenBadge: tp("hiddenBadge"), processingBadge: tp("processingBadge"),
             errorBadge: tp("errorBadge"), clear: tp("clear"), actionError: tp("actionError"),
           }}
