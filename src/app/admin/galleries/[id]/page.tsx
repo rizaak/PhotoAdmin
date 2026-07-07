@@ -58,7 +58,13 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
 
       <section className="rounded border bg-white p-4">
         <h2 className="mb-4 font-medium">{t("settings")}</h2>
-        <form action={updateGalleryAction} className="grid max-w-2xl grid-cols-2 gap-4 text-sm">
+        {/* key: al guardar, React 19 resetea el form a sus defaultValue; remontarlo
+            con datos frescos evita mostrar el estado anterior hasta refrescar */}
+        <form
+          key={gallery.updatedAt.getTime()}
+          action={updateGalleryAction}
+          className="grid max-w-2xl grid-cols-2 gap-4 text-sm"
+        >
           <input type="hidden" name="galleryId" value={gallery.id} />
           <label className="col-span-2 flex flex-col gap-1">
             {t("title")}
@@ -136,7 +142,11 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
           {sectionList.length === 0 && <li className="py-2 text-sm text-neutral-500">{t("noSections")}</li>}
           {sectionList.map((s, idx) => (
             <li key={s.id} className="flex items-center gap-2 py-2 text-sm">
-              <form action={renameSectionAction} className="flex flex-1 items-center gap-2">
+              <form
+                key={`${s.id}-${s.name}`}
+                action={renameSectionAction}
+                className="flex flex-1 items-center gap-2"
+              >
                 <input type="hidden" name="galleryId" value={gallery.id} />
                 <input type="hidden" name="sectionId" value={s.id} />
                 <input name="name" defaultValue={s.name} required className={`${input} flex-1`} />
