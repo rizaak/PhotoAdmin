@@ -6,6 +6,7 @@ import { createSectionFromSelectionAction, type SelectionState } from "./actions
 type Labels = {
   createSection: string; sectionName: string; selectClients: string;
   hideOthers: string; create: string; created: string; emptySelection: string;
+  selectAtLeastOne: string;
 };
 
 export function SelectionForm({
@@ -40,7 +41,11 @@ export function SelectionForm({
       {state && "created" in state && (
         <p className="text-green-700">{labels.created.replace("{count}", String(state.created))}</p>
       )}
-      {state && "error" in state && <p className="text-red-600">{labels.emptySelection}</p>}
+      {state && "error" in state && (
+        <p className="text-red-600">
+          {state.error === "selectAtLeastOne" ? labels.selectAtLeastOne : labels.emptySelection}
+        </p>
+      )}
       <button disabled={pending} className="rounded bg-neutral-900 px-3 py-1.5 text-white disabled:opacity-50">
         {labels.create}
       </button>

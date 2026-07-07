@@ -76,7 +76,7 @@ export default async function ActivityPage({
             createSection: t("createSection"), sectionName: t("sectionName"),
             selectClients: t("selectClients"), hideOthers: t("hideOthers"),
             create: t("create"), created: t.raw("created") as string,
-            emptySelection: t("emptySelection"),
+            emptySelection: t("emptySelection"), selectAtLeastOne: t("selectAtLeastOne"),
           }}
         />
       )}

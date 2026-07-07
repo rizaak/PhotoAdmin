@@ -90,7 +90,8 @@
     "hideOthers": "Ocultar las demás secciones y dejar visible solo esta",
     "create": "Crear sección",
     "created": "Sección creada con {count} fotos.",
-    "emptySelection": "Los clientes elegidos no tienen favoritas en esta galería."
+    "emptySelection": "Los clientes elegidos no tienen favoritas en esta galería.",
+    "selectAtLeastOne": "Elige al menos un cliente."
   },
   "clientGallery": {
     "welcome": "Bienvenido a la galería",

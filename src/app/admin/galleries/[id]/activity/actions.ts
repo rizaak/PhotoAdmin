@@ -13,15 +13,18 @@ const schema = z.object({
   hideOthers: z.boolean(),
 });
 
-export type SelectionState = { error: "emptySelection" } | { created: number } | null;
+export type SelectionState =
+  { error: "emptySelection" | "selectAtLeastOne" } | { created: number } | null;
 
 export async function createSectionFromSelectionAction(
   _prev: SelectionState, formData: FormData,
 ): Promise<SelectionState> {
   const studio = await requireStudio();
+  const rawClientIds = formData.getAll("clientIds").map(String);
+  if (rawClientIds.length === 0) return { error: "selectAtLeastOne" };
   const data = schema.parse({
     galleryId: formData.get("galleryId"),
-    clientIds: formData.getAll("clientIds").map(String),
+    clientIds: rawClientIds,
     name: formData.get("name"),
     hideOthers: formData.get("hideOthers") === "on",
   });
