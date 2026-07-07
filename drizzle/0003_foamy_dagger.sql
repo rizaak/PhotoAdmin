@@ -1,0 +1,1 @@
+ALTER TABLE "photos" ADD COLUMN "thumb_wm_key" text;

@@ -35,4 +35,15 @@ describe("storage presigning (offline)", () => {
     const signedHeaders = decodeURIComponent(new URL(url).searchParams.get("X-Amz-SignedHeaders") ?? "");
     expect(signedHeaders).toContain("content-length");
   });
+
+  it("adds attachment content-disposition when a download filename is given", async () => {
+    const { presignDownload } = await import("@/server/storage");
+    const url = await presignDownload("k/web.jpg", 900, 'bo"da á.jpg');
+    const params = new URL(url).searchParams;
+    const disposition = params.get("response-content-disposition") ?? "";
+    expect(disposition).toContain("attachment");
+    expect(disposition).toContain('filename="bo_da _.jpg"');
+    const plain = await presignDownload("k/web.jpg");
+    expect(new URL(plain).searchParams.get("response-content-disposition")).toBeNull();
+  });
 });

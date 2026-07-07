@@ -40,9 +40,20 @@ export async function presignUpload(
   );
 }
 
-export async function presignDownload(key: string, expiresIn = 900): Promise<string> {
+export async function presignDownload(
+  key: string, expiresIn = 900, downloadFilename?: string,
+): Promise<string> {
   const clamped = Math.min(expiresIn, 900);
-  return getSignedUrl(r2(), new GetObjectCommand({ Bucket: bucket(), Key: key }), { expiresIn: clamped });
+  const safeName = downloadFilename?.replace(/[^\x20-\x7e]|"/g, "_");
+  return getSignedUrl(
+    r2(),
+    new GetObjectCommand({
+      Bucket: bucket(),
+      Key: key,
+      ...(safeName ? { ResponseContentDisposition: `attachment; filename="${safeName}"` } : {}),
+    }),
+    { expiresIn: clamped },
+  );
 }
 
 export async function getObjectBuffer(key: string): Promise<Buffer> {

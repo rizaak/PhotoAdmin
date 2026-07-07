@@ -65,6 +65,7 @@ export const photos = pgTable("photos", {
   filename: text("filename").notNull(),
   originalKey: text("original_key").notNull(),
   thumbKey: text("thumb_key"),
+  thumbWmKey: text("thumb_wm_key"),
   webKey: text("web_key"),
   webWmKey: text("web_wm_key"),
   highKey: text("high_key"),
