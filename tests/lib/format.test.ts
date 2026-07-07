@@ -9,4 +9,9 @@ describe("formatBytes", () => {
     expect(formatBytes(23.4 * 1024 * 1024)).toBe("23.4 MB");
     expect(formatBytes(1.25 * 1024 * 1024 * 1024)).toBe("1.3 GB");
   });
+
+  it("rolls over to the next unit at 1024^n boundaries", () => {
+    expect(formatBytes(1048575)).toBe("1.0 MB");
+    expect(formatBytes(1073741823)).toBe("1.0 GB");
+  });
 });
