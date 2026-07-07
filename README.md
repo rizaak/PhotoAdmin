@@ -13,6 +13,25 @@ Next.js (App Router, TS) · Drizzle + PostgreSQL (Neon) · Auth0 · Cloudflare R
 3. `npm run db:migrate`
 4. `npm run dev` → http://localhost:3000/admin
 
+## Cloudflare R2 (fotos)
+
+1. Crear bucket privado en R2 y un API token con permisos de lectura/escritura de objetos.
+2. Completar en `.env.local`: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`.
+3. Configurar CORS del bucket (Settings → CORS policy) para permitir la subida directa desde el navegador:
+
+```json
+[
+  {
+    "AllowedOrigins": ["http://localhost:3000"],
+    "AllowedMethods": ["PUT"],
+    "AllowedHeaders": ["content-type"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+En producción, agregar el dominio de la app a `AllowedOrigins`.
+
 ## Comandos
 - `npm test` — Vitest (dominio, con PGlite en memoria; no requiere Postgres)
 - `npm run db:generate` — generar migraciones tras cambiar `src/db/schema.ts`
