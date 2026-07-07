@@ -71,5 +71,23 @@
       "clear": "Clear selection",
       "actionError": "The action could not be completed. Reload the page and try again."
     }
+  },
+  "clientGallery": {
+    "welcome": "Welcome to the gallery",
+    "emailLabel": "Your email",
+    "nameLabel": "Your name (optional)",
+    "passwordLabel": "Gallery password",
+    "enter": "Enter",
+    "invalidPassword": "Wrong password.",
+    "tooManyAttempts": "Too many attempts. Wait a few minutes.",
+    "genericError": "Could not enter. Check your details.",
+    "notFoundTitle": "Gallery unavailable",
+    "like": "Like",
+    "unlike": "Remove like",
+    "comments": "Comments",
+    "commentPlaceholder": "Write a comment…",
+    "send": "Send",
+    "empty": "This gallery has no photos yet.",
+    "yourActivity": "Only you and the photographer can see your likes and comments."
   }
 }

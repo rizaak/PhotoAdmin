@@ -71,5 +71,23 @@
       "clear": "Quitar selección",
       "actionError": "No se pudo completar la acción. Recarga la página e inténtalo de nuevo."
     }
+  },
+  "clientGallery": {
+    "welcome": "Bienvenido a la galería",
+    "emailLabel": "Tu email",
+    "nameLabel": "Tu nombre (opcional)",
+    "passwordLabel": "Contraseña de la galería",
+    "enter": "Entrar",
+    "invalidPassword": "Contraseña incorrecta.",
+    "tooManyAttempts": "Demasiados intentos. Espera unos minutos.",
+    "genericError": "No se pudo entrar. Revisa los datos.",
+    "notFoundTitle": "Galería no disponible",
+    "like": "Me gusta",
+    "unlike": "Quitar me gusta",
+    "comments": "Comentarios",
+    "commentPlaceholder": "Escribe un comentario…",
+    "send": "Enviar",
+    "empty": "Esta galería aún no tiene fotos.",
+    "yourActivity": "Solo tú y el fotógrafo ven tus me gusta y comentarios."
   }
 }
