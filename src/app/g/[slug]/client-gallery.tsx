@@ -10,7 +10,7 @@ export type ClientPhoto = {
   thumbUrl: string;
   webUrl: string;
   liked: boolean;
-  comments: { id: string; body: string }[];
+  comment: { id: string; body: string } | null;
 };
 
 type Labels = {
@@ -45,16 +45,21 @@ export function ClientGallery({
     }
   }
 
+  function openLightbox(photo: ClientPhoto) {
+    setOpenPhoto(photo);
+    setDraft(photo.comment?.body ?? "");
+  }
+
   async function onComment(photo: ClientPhoto) {
     if (!draft.trim() || busy) return;
     setBusy(true);
     try {
       const c = await addCommentAction({ slug, photoId: photo.id, body: draft });
       const update = (p: ClientPhoto) =>
-        p.id === photo.id ? { ...p, comments: [...p.comments, { id: c.id, body: c.body }] } : p;
+        p.id === photo.id ? { ...p, comment: { id: c.id, body: c.body } } : p;
       setPhotos((prev) => prev.map(update));
       setOpenPhoto((prev) => (prev ? update(prev) : prev));
-      setDraft("");
+      setDraft(c.body);
     } catch {
       alert(labels.actionError);
     } finally {
@@ -91,7 +96,7 @@ export function ClientGallery({
             {s.name && <h2 className="mb-3 font-serif text-2xl">{s.name}</h2>}
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
               {s.photos.map((p) => (
-                <figure key={p.id} className="group relative cursor-pointer" onClick={() => setOpenPhoto(p)}>
+                <figure key={p.id} className="group relative cursor-pointer" onClick={() => openLightbox(p)}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.thumbUrl} alt={p.filename} draggable={false}
                     className="aspect-square w-full rounded object-cover" />
@@ -104,9 +109,9 @@ export function ClientGallery({
                   >
                     ♥
                   </button>
-                  {p.comments.length > 0 && (
+                  {p.comment && (
                     <span className="absolute bottom-2 right-2 rounded bg-black/50 px-1.5 text-xs text-white">
-                      💬 {p.comments.length}
+                      💬
                     </span>
                   )}
                 </figure>
@@ -134,20 +139,15 @@ export function ClientGallery({
               ♥ {openPhoto.liked ? labels.unlike : labels.like}
             </button>
             <h3 className="text-sm font-medium">{labels.comments}</h3>
-            <ul className="space-y-2 text-sm">
-              {openPhoto.comments.map((c) => (
-                <li key={c.id} className="rounded bg-neutral-100 p-2">{c.body}</li>
-              ))}
-            </ul>
-            <div className="flex gap-2">
-              <input
+            <div className="space-y-2">
+              <textarea
                 value={draft} onChange={(e) => setDraft(e.target.value)}
                 placeholder={labels.commentPlaceholder}
-                onKeyDown={(e) => { if (e.key === "Enter") void onComment(openPhoto); }}
-                className="flex-1 rounded border px-2 py-1.5 text-sm"
+                rows={3}
+                className="w-full resize-none rounded border px-2 py-1.5 text-sm"
               />
               <button disabled={busy} onClick={() => void onComment(openPhoto)}
-                className="rounded bg-neutral-900 px-3 text-sm text-white disabled:opacity-50">
+                className="rounded bg-neutral-900 px-3 py-1.5 text-sm text-white disabled:opacity-50">
                 {labels.send}
               </button>
             </div>

@@ -45,7 +45,9 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
       thumbUrl: p.thumbKey ? await presignDownload(p.thumbKey) : "",
       webUrl: p.webKey ? await presignDownload(p.webKey) : "",
       liked: data.likedPhotoIds.includes(p.id),
-      comments: (data.commentsByPhoto[p.id] ?? []).map((c) => ({ id: c.id, body: c.body })),
+      comment: data.commentsByPhoto[p.id]?.[0]
+        ? { id: data.commentsByPhoto[p.id][0].id, body: data.commentsByPhoto[p.id][0].body }
+        : null,
     })),
   );
   const cover = data.photos.find((p) => p.id === data.gallery.coverPhotoId);

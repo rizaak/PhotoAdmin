@@ -15,6 +15,13 @@
       "when": 1783436658246,
       "tag": "0001_chemical_wolverine",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783450296848,
+      "tag": "0002_nosy_emma_frost",
+      "breakpoints": true
     }
   ]
 }

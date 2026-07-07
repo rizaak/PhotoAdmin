@@ -105,9 +105,9 @@
     "notFoundTitle": "Galería no disponible",
     "like": "Me gusta",
     "unlike": "Quitar me gusta",
-    "comments": "Comentarios",
+    "comments": "Tu comentario",
     "commentPlaceholder": "Escribe un comentario…",
-    "send": "Enviar",
+    "send": "Guardar",
     "empty": "Esta galería aún no tiene fotos.",
     "yourActivity": "Solo tú y el fotógrafo ven tus me gusta y comentarios.",
     "actionError": "No se pudo guardar. Recarga la página e inténtalo de nuevo."

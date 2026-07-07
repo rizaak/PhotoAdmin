@@ -6,8 +6,8 @@ import { accessGallery } from "@/server/client-access";
 import { toggleLike, addComment } from "@/server/engagement";
 import { createSection, setSectionVisible } from "@/server/sections";
 import { movePhotos } from "@/server/photos";
-import { activityEvents } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { activityEvents, comments } from "@/db/schema";
+import { and, eq } from "drizzle-orm";
 
 async function setup() {
   const db = await createTestDb();
@@ -36,8 +36,29 @@ describe("engagement", () => {
     const { db, gallery, photo, clientId } = await setup();
     const c = await addComment(db, clientId, gallery.id, photo.id, "  Preciosa!  ");
     expect(c.body).toBe("Preciosa!");
+    expect(c.created).toBe(true);
     await expect(addComment(db, clientId, gallery.id, photo.id, "   ")).rejects.toThrow();
     await expect(addComment(db, clientId, gallery.id, photo.id, "x".repeat(1001))).rejects.toThrow();
+  });
+
+  it("edits the existing comment instead of creating a new one", async () => {
+    const { db, gallery, photo, clientId } = await setup();
+    const first = await addComment(db, clientId, gallery.id, photo.id, "Preciosa!");
+    expect(first.created).toBe(true);
+
+    const second = await addComment(db, clientId, gallery.id, photo.id, "En realidad, hermosa!");
+    expect(second.created).toBe(false);
+    expect(second.id).toBe(first.id);
+    expect(second.body).toBe("En realidad, hermosa!");
+
+    const rows = await db.select().from(comments)
+      .where(and(eq(comments.clientId, clientId), eq(comments.photoId, photo.id)));
+    expect(rows).toHaveLength(1);
+    expect(rows[0].body).toBe("En realidad, hermosa!");
+
+    const events = await db.select().from(activityEvents)
+      .where(and(eq(activityEvents.photoId, photo.id), eq(activityEvents.type, "comment")));
+    expect(events).toHaveLength(1);
   });
 
   it("rejects hidden photos, foreign galleries and non-member clients", async () => {

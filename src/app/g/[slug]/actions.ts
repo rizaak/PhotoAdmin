@@ -75,19 +75,21 @@ export async function addCommentAction(input: { slug: string; photoId: string; b
   if (!checkRateLimit(`comment:${clientId}`, 30, 60_000)) throw new Error("RATE_LIMITED");
   const comment = await addComment(db, clientId, gallery.id, data.photoId, data.body);
 
-  after(async () => {
-    try {
-      const [studio] = await db.select().from(studios).where(eq(studios.id, gallery.studioId));
-      const [photo] = await db.select({ filename: photos.filename }).from(photos).where(eq(photos.id, data.photoId));
-      const [clientRow] = await db.select({ email: clients.email }).from(clients).where(eq(clients.id, clientId));
-      await notifyPhotographer({
-        to: studio?.notificationEmail ?? null,
-        ...commentEmail(gallery.title, clientRow?.email ?? "cliente", comment.body, photo?.filename ?? ""),
-      });
-    } catch (e) {
-      console.error("comment email failed", e);
-    }
-  });
+  if (comment.created) {
+    after(async () => {
+      try {
+        const [studio] = await db.select().from(studios).where(eq(studios.id, gallery.studioId));
+        const [photo] = await db.select({ filename: photos.filename }).from(photos).where(eq(photos.id, data.photoId));
+        const [clientRow] = await db.select({ email: clients.email }).from(clients).where(eq(clients.id, clientId));
+        await notifyPhotographer({
+          to: studio?.notificationEmail ?? null,
+          ...commentEmail(gallery.title, clientRow?.email ?? "cliente", comment.body, photo?.filename ?? ""),
+        });
+      } catch (e) {
+        console.error("comment email failed", e);
+      }
+    });
+  }
 
   return { id: comment.id, body: comment.body };
 }

@@ -109,7 +109,7 @@ export const comments = pgTable("comments", {
   photoId: uuid("photo_id").notNull().references(() => photos.id, { onDelete: "cascade" }),
   body: text("body").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}, (t) => [uniqueIndex("comments_client_photo_idx").on(t.clientId, t.photoId)]);
 
 export const activityEvents = pgTable("activity_events", {
   id: uuid("id").defaultRandom().primaryKey(),

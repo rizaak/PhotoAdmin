@@ -43,12 +43,18 @@ export async function toggleLike(
 
 export async function addComment(
   db: Db, clientId: string, galleryId: string, photoId: string, body: string,
-): Promise<{ id: string; body: string; createdAt: Date }> {
+): Promise<{ id: string; body: string; createdAt: Date; created: boolean }> {
   const text = bodySchema.parse(body);
   await assertEngageable(db, clientId, galleryId, photoId);
+  const [existing] = await db.select({ id: comments.id }).from(comments)
+    .where(and(eq(comments.clientId, clientId), eq(comments.photoId, photoId)));
   const [comment] = await db.insert(comments)
     .values({ clientId, photoId, body: text })
+    .onConflictDoUpdate({ target: [comments.clientId, comments.photoId], set: { body: text, createdAt: new Date() } })
     .returning();
-  await db.insert(activityEvents).values({ galleryId, clientId, photoId, type: "comment" });
-  return { id: comment.id, body: comment.body, createdAt: comment.createdAt };
+  const created = !existing;
+  if (created) {
+    await db.insert(activityEvents).values({ galleryId, clientId, photoId, type: "comment" });
+  }
+  return { id: comment.id, body: comment.body, createdAt: comment.createdAt, created };
 }

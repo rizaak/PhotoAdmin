@@ -105,9 +105,9 @@
     "notFoundTitle": "Gallery unavailable",
     "like": "Like",
     "unlike": "Remove like",
-    "comments": "Comments",
+    "comments": "Your comment",
     "commentPlaceholder": "Write a comment…",
-    "send": "Send",
+    "send": "Save",
     "empty": "This gallery has no photos yet.",
     "yourActivity": "Only you and the photographer can see your likes and comments.",
     "actionError": "Could not save. Reload the page and try again."
