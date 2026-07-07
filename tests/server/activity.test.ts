@@ -76,6 +76,8 @@ describe("admin activity", () => {
     await expect(createSectionFromSelection(db, studio.id, g.id, [], "X", false)).rejects.toThrow("EMPTY_SELECTION");
     await expect(listGalleryClients(db, intruder.id, g.id)).rejects.toThrow("NOT_FOUND");
     await expect(clientEngagementDetail(db, intruder.id, g.id, ana)).rejects.toThrow("NOT_FOUND");
+    await expect(clientActivityLog(db, intruder.id, g.id, ana)).rejects.toThrow("NOT_FOUND");
+    await expect(selectionUnion(db, intruder.id, g.id, [ana])).rejects.toThrow("NOT_FOUND");
     await expect(createSectionFromSelection(db, intruder.id, g.id, [ana], "X", false)).rejects.toThrow("NOT_FOUND");
   });
 });

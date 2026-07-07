@@ -85,13 +85,15 @@ export async function createSectionFromSelection(
   const photoIds = await selectionUnion(db, studioId, galleryId, clientIds);
   if (photoIds.length === 0) throw new Error("EMPTY_SELECTION");
 
-  const section = await createSection(db, studioId, galleryId, sectionName);
-  await movePhotos(db, studioId, galleryId, photoIds, section.id);
-  if (hideOthers) {
-    const all = await listSections(db, studioId, galleryId);
-    for (const s of all) {
-      if (s.id !== section.id && s.visible) await setSectionVisible(db, studioId, s.id, false);
+  return db.transaction(async (tx) => {
+    const section = await createSection(tx, studioId, galleryId, sectionName);
+    await movePhotos(tx, studioId, galleryId, photoIds, section.id);
+    if (hideOthers) {
+      const all = await listSections(tx, studioId, galleryId);
+      for (const s of all) {
+        if (s.id !== section.id && s.visible) await setSectionVisible(tx, studioId, s.id, false);
+      }
     }
-  }
-  return { sectionId: section.id, movedCount: photoIds.length };
+    return { sectionId: section.id, movedCount: photoIds.length };
+  });
 }
