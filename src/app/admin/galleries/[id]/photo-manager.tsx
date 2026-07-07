@@ -20,6 +20,7 @@ type Labels = {
   empty: string; noSection: string; selected: string; moveTo: string; move: string;
   publish: string; hide: string; delete: string; deleteConfirm: string;
   setCover: string; hiddenBadge: string; processingBadge: string; errorBadge: string; clear: string;
+  actionError: string;
 };
 
 type Rect = { x: number; y: number; w: number; h: number };
@@ -68,7 +69,9 @@ export function PhotoManager({
 
   // Selección por arrastre (rubber band) sobre el fondo del contenedor
   function onPointerDown(e: React.PointerEvent) {
-    if (e.target !== containerRef.current || e.button !== 0) return;
+    if (e.button !== 0 || !containerRef.current) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("figure")) return; // clic en foto = selección, no drag
     const bounds = containerRef.current.getBoundingClientRect();
     dragOrigin.current = { x: e.clientX - bounds.left, y: e.clientY - bounds.top };
     containerRef.current.setPointerCapture(e.pointerId);
@@ -104,6 +107,9 @@ export function PhotoManager({
     try {
       await action();
       setSelected(new Set());
+      router.refresh();
+    } catch {
+      alert(labels.actionError);
       router.refresh();
     } finally {
       setPending(false);

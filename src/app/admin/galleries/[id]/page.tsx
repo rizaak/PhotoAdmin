@@ -195,7 +195,7 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
             moveTo: tp("moveTo"), move: tp("move"), publish: tp("publish"), hide: tp("hide"),
             delete: tp("delete"), deleteConfirm: tp("deleteConfirm"), setCover: tp("setCover"),
             hiddenBadge: tp("hiddenBadge"), processingBadge: tp("processingBadge"),
-            errorBadge: tp("errorBadge"), clear: tp("clear"),
+            errorBadge: tp("errorBadge"), clear: tp("clear"), actionError: tp("actionError"),
           }}
         />
       </section>

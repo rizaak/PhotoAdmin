@@ -67,7 +67,8 @@
       "hiddenBadge": "hidden",
       "processingBadge": "processing",
       "errorBadge": "error",
-      "clear": "Clear selection"
+      "clear": "Clear selection",
+      "actionError": "The action could not be completed. Reload the page and try again."
     }
   }
 }
