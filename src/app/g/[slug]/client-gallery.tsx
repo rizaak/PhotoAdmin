@@ -15,7 +15,7 @@ export type ClientPhoto = {
 
 type Labels = {
   like: string; unlike: string; comments: string; commentPlaceholder: string;
-  send: string; empty: string; yourActivity: string;
+  send: string; empty: string; yourActivity: string; actionError: string;
 };
 
 export function ClientGallery({
@@ -36,9 +36,13 @@ export function ClientGallery({
   const bg = dark ? "bg-neutral-950 text-neutral-100" : "bg-white text-neutral-900";
 
   async function onToggleLike(photo: ClientPhoto) {
-    const { liked } = await toggleLikeAction({ slug, photoId: photo.id });
-    setPhotos((prev) => prev.map((p) => (p.id === photo.id ? { ...p, liked } : p)));
-    setOpenPhoto((prev) => (prev && prev.id === photo.id ? { ...prev, liked } : prev));
+    try {
+      const { liked } = await toggleLikeAction({ slug, photoId: photo.id });
+      setPhotos((prev) => prev.map((p) => (p.id === photo.id ? { ...p, liked } : p)));
+      setOpenPhoto((prev) => (prev && prev.id === photo.id ? { ...prev, liked } : prev));
+    } catch {
+      alert(labels.actionError);
+    }
   }
 
   async function onComment(photo: ClientPhoto) {
@@ -51,6 +55,8 @@ export function ClientGallery({
       setPhotos((prev) => prev.map(update));
       setOpenPhoto((prev) => (prev ? update(prev) : prev));
       setDraft("");
+    } catch {
+      alert(labels.actionError);
     } finally {
       setBusy(false);
     }

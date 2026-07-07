@@ -88,6 +88,7 @@
     "commentPlaceholder": "Escribe un comentario…",
     "send": "Enviar",
     "empty": "Esta galería aún no tiene fotos.",
-    "yourActivity": "Solo tú y el fotógrafo ven tus me gusta y comentarios."
+    "yourActivity": "Solo tú y el fotógrafo ven tus me gusta y comentarios.",
+    "actionError": "No se pudo guardar. Recarga la página e inténtalo de nuevo."
   }
 }

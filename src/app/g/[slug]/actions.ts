@@ -62,13 +62,15 @@ export async function addCommentAction(input: { slug: string; photoId: string; b
   const { gallery, clientId } = await requireClientSession(data.slug);
   const comment = await addComment(db, clientId, gallery.id, data.photoId, data.body);
 
-  const [studio] = await db.select().from(studios).where(eq(studios.id, gallery.studioId));
-  const [photo] = await db.select({ filename: photos.filename }).from(photos).where(eq(photos.id, data.photoId));
-  const [clientRow] = await db.select({ email: clients.email }).from(clients).where(eq(clients.id, clientId));
-  void notifyPhotographer({
-    to: studio?.notificationEmail ?? null,
-    ...commentEmail(gallery.title, clientRow?.email ?? "cliente", comment.body, photo?.filename ?? ""),
-  }).catch(() => {});
+  void (async () => {
+    const [studio] = await db.select().from(studios).where(eq(studios.id, gallery.studioId));
+    const [photo] = await db.select({ filename: photos.filename }).from(photos).where(eq(photos.id, data.photoId));
+    const [clientRow] = await db.select({ email: clients.email }).from(clients).where(eq(clients.id, clientId));
+    await notifyPhotographer({
+      to: studio?.notificationEmail ?? null,
+      ...commentEmail(gallery.title, clientRow?.email ?? "cliente", comment.body, photo?.filename ?? ""),
+    });
+  })().catch((e) => console.error("comment email failed", e));
 
   return { id: comment.id, body: comment.body };
 }

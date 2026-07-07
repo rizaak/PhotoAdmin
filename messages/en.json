@@ -88,6 +88,7 @@
     "commentPlaceholder": "Write a comment…",
     "send": "Send",
     "empty": "This gallery has no photos yet.",
-    "yourActivity": "Only you and the photographer can see your likes and comments."
+    "yourActivity": "Only you and the photographer can see your likes and comments.",
+    "actionError": "Could not save. Reload the page and try again."
   }
 }
