@@ -72,6 +72,26 @@
       "actionError": "No se pudo completar la acción. Recarga la página e inténtalo de nuevo."
     }
   },
+  "activity": {
+    "title": "Actividad",
+    "backToGallery": "Volver a la galería",
+    "clients": "Clientes",
+    "noClients": "Aún nadie ha entrado a esta galería.",
+    "lastSeen": "Último acceso",
+    "likes": "Me gusta",
+    "comments": "Comentarios",
+    "log": "Movimientos",
+    "event": { "access": "Entró a la galería", "like_added": "Marcó favorita", "like_removed": "Quitó favorita", "comment": "Comentó", "download_photo": "Descargó foto", "download_zip": "Descargó ZIP" },
+    "favoritesOf": "Favoritas de",
+    "commentsOf": "Comentarios de",
+    "createSection": "Crear sección con la selección",
+    "sectionName": "Nombre de la nueva sección",
+    "selectClients": "Clientes a combinar (unión sin duplicados)",
+    "hideOthers": "Ocultar las demás secciones y dejar visible solo esta",
+    "create": "Crear sección",
+    "created": "Sección creada con {count} fotos.",
+    "emptySelection": "Los clientes elegidos no tienen favoritas en esta galería."
+  },
   "clientGallery": {
     "welcome": "Bienvenido a la galería",
     "emailLabel": "Tu email",

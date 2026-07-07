@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { db } from "@/db";
@@ -16,9 +17,10 @@ import { PhotoManager, type PhotoView } from "./photo-manager";
 export default async function GalleryDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const studio = await requireStudio();
-  const [t, tg] = await Promise.all([
+  const [t, tg, tActivity] = await Promise.all([
     getTranslations("galleryDetail"),
     getTranslations("galleries"),
+    getTranslations("activity"),
   ]);
 
   const gallery = await getGallery(db, studio.id, id).catch(() => null);
@@ -49,6 +51,9 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
         <p className="text-sm text-neutral-500">
           {t("shareLink")}: <code className="rounded bg-neutral-100 px-1">/g/{gallery.slug}</code>
         </p>
+        <Link href={`/admin/galleries/${gallery.id}/activity`} className="text-sm text-neutral-500 hover:underline">
+          {tActivity("title")} →
+        </Link>
       </div>
 
       <section className="rounded border bg-white p-4">

@@ -72,6 +72,26 @@
       "actionError": "The action could not be completed. Reload the page and try again."
     }
   },
+  "activity": {
+    "title": "Activity",
+    "backToGallery": "Back to gallery",
+    "clients": "Clients",
+    "noClients": "No one has entered this gallery yet.",
+    "lastSeen": "Last access",
+    "likes": "Likes",
+    "comments": "Comments",
+    "log": "Activity log",
+    "event": { "access": "Entered the gallery", "like_added": "Liked a photo", "like_removed": "Removed a like", "comment": "Commented", "download_photo": "Downloaded photo", "download_zip": "Downloaded ZIP" },
+    "favoritesOf": "Favorites of",
+    "commentsOf": "Comments of",
+    "createSection": "Create section from selection",
+    "sectionName": "New section name",
+    "selectClients": "Clients to combine (deduplicated union)",
+    "hideOthers": "Hide all other sections and leave only this one visible",
+    "create": "Create section",
+    "created": "Section created with {count} photos.",
+    "emptySelection": "The selected clients have no favorites in this gallery."
+  },
   "clientGallery": {
     "welcome": "Welcome to the gallery",
     "emailLabel": "Your email",
