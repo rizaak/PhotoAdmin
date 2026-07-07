@@ -78,4 +78,17 @@ describe("makeDerivatives", () => {
     const marked = await applyWatermark(await makeJpeg(400, 300), `<Isaac & "Fotos">`);
     expect((await sharp(marked).metadata()).width).toBe(400);
   });
+
+  it("tiles the watermark across the whole image even with long text", async () => {
+    const black = await sharp({
+      create: { width: 1200, height: 800, channels: 3, background: { r: 0, g: 0, b: 0 } },
+    }).jpeg().toBuffer();
+    const marked = await applyWatermark(black, "© Estudio Isaac López Fotografía 2026");
+    const quadrant = (left: number, top: number) =>
+      sharp(marked).extract({ left, top, width: 600, height: 400 }).stats();
+    const stats = await Promise.all([quadrant(0, 0), quadrant(600, 0), quadrant(0, 400), quadrant(600, 400)]);
+    for (const s of stats) {
+      expect(s.channels[0].mean).toBeGreaterThan(0.5); // cada cuadrante tiene marca
+    }
+  });
 });

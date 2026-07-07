@@ -59,9 +59,13 @@ function escapeXml(text: string): string {
 }
 
 function watermarkSvg(width: number, height: number, text: string): Buffer {
-  const fontSize = Math.max(14, Math.round(Math.max(width, height) / 24));
-  const tileW = fontSize * (text.length + 6);
-  const tileH = fontSize * 6;
+  const maxDim = Math.max(width, height);
+  const targetTextWidth = maxDim / 3;
+  // ~0.6 * fontSize por carácter (aprox Helvetica); mínimo legible 12px
+  const fontSize = Math.max(12, Math.min(maxDim / 24, targetTextWidth / (0.6 * Math.max(text.length, 1))));
+  const textWidth = 0.6 * fontSize * text.length;
+  const tileW = Math.ceil(textWidth + fontSize * 4);
+  const tileH = Math.ceil(fontSize * 5);
   return Buffer.from(
     `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">` +
       `<defs><pattern id="wm" width="${tileW}" height="${tileH}" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)">` +
@@ -72,7 +76,12 @@ function watermarkSvg(width: number, height: number, text: string): Buffer {
 }
 
 export async function applyWatermark(image: Buffer, text: string): Promise<Buffer> {
-  const meta = await sharp(image).metadata();
+  let meta: Metadata;
+  try {
+    meta = await sharp(image).metadata();
+  } catch {
+    throw new Error("INVALID_IMAGE");
+  }
   if (!meta.width || !meta.height) throw new Error("INVALID_IMAGE");
   return sharp(image)
     .composite([{ input: watermarkSvg(meta.width, meta.height, text) }])
@@ -112,7 +121,7 @@ export async function makeDerivatives(
   let thumbWm: Buffer | null = null;
   let webWm: Buffer | null = null;
   let highWm: Buffer | null = null;
-  if (opts.watermarkText) {
+  if (opts.watermarkText) { // "" se trata como sin marca
     [thumbWm, webWm, highWm] = await Promise.all([
       applyWatermark(thumb, opts.watermarkText),
       applyWatermark(web, opts.watermarkText),
