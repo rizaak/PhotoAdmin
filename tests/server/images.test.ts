@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import sharp from "sharp";
-import { processImage } from "@/server/images";
+import { processImage, makeDerivatives, applyWatermark } from "@/server/images";
 
 async function makeJpeg(width: number, height: number): Promise<Buffer> {
   return sharp({
@@ -51,5 +51,31 @@ describe("processImage", () => {
     }).jpeg().withExif({ IFD0: { DateTime: "2026:05:01 10:00:00" } }).toBuffer();
     const out = await processImage(withDate);
     expect(out.takenAt).toBeInstanceOf(Date);
+  });
+});
+
+describe("makeDerivatives", () => {
+  it("produces thumb/web/high and watermarked variants when text given", async () => {
+    const out = await makeDerivatives(await makeJpeg(5000, 3000), { watermarkText: "© Isaac" });
+    const high = await sharp(out.high).metadata();
+    expect(Math.max(high.width!, high.height!)).toBe(4096);
+    expect(out.thumbWm).not.toBeNull();
+    expect(out.webWm).not.toBeNull();
+    expect(out.highWm).not.toBeNull();
+    // la variante marcada difiere de la limpia
+    expect(Buffer.compare(out.web, out.webWm!)).not.toBe(0);
+    expect(out.width).toBe(5000);
+  });
+
+  it("skips watermark variants without text", async () => {
+    const out = await makeDerivatives(await makeJpeg(800, 600), { watermarkText: null });
+    expect(out.thumbWm).toBeNull();
+    expect(out.webWm).toBeNull();
+    expect(out.highWm).toBeNull();
+  });
+
+  it("escapes XML-sensitive characters in the watermark text", async () => {
+    const marked = await applyWatermark(await makeJpeg(400, 300), `<Isaac & "Fotos">`);
+    expect((await sharp(marked).metadata()).width).toBe(400);
   });
 });
