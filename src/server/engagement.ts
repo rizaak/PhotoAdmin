@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "@/db";
-import { photos, likes, comments, galleryClients, activityEvents } from "@/db/schema";
+import { photos, likes, comments, galleryClients, activityEvents, sections } from "@/db/schema";
 
 const bodySchema = z.string().trim().min(1).max(1000);
 
@@ -12,6 +12,10 @@ async function assertEngageable(db: Db, clientId: string, galleryId: string, pho
   const [photo] = await db.select().from(photos)
     .where(and(eq(photos.id, photoId), eq(photos.galleryId, galleryId)));
   if (!photo || !photo.published || photo.status !== "ready") throw new Error("NOT_FOUND");
+  if (photo.sectionId !== null) {
+    const [section] = await db.select().from(sections).where(eq(sections.id, photo.sectionId));
+    if (!section || !section.visible) throw new Error("NOT_FOUND");
+  }
   return photo;
 }
 

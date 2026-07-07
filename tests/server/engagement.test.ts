@@ -4,6 +4,8 @@ import { createGallery, updateGallerySettings } from "@/server/galleries";
 import { registerUpload, completeProcessing, setPhotosPublished } from "@/server/photos";
 import { accessGallery } from "@/server/client-access";
 import { toggleLike, addComment } from "@/server/engagement";
+import { createSection, setSectionVisible } from "@/server/sections";
+import { movePhotos } from "@/server/photos";
 import { activityEvents } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
@@ -50,6 +52,15 @@ describe("engagement", () => {
 
     const { clientId: outsider } = await accessGallery(db, other.slug, { email: "otro@x.com" });
     await expect(addComment(db, outsider, gallery.id, photo.id, "hola")).rejects.toThrow("NOT_FOUND");
+  });
+
+  it("rejects engagement on photos in hidden sections", async () => {
+    const { db, studio, gallery, photo, clientId } = await setup();
+    const section = await createSection(db, studio.id, gallery.id, "Oculta");
+    await movePhotos(db, studio.id, gallery.id, [photo.id], section.id);
+    await setSectionVisible(db, studio.id, section.id, false);
+    await expect(toggleLike(db, clientId, gallery.id, photo.id)).rejects.toThrow("NOT_FOUND");
+    await expect(addComment(db, clientId, gallery.id, photo.id, "hola")).rejects.toThrow("NOT_FOUND");
   });
 
   it("tolerates concurrent double-toggle without raw DB errors", async () => {

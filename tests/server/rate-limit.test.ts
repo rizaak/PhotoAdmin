@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { checkRateLimit, resetRateLimit } from "@/server/rate-limit";
+import { checkRateLimit, isRateLimited, resetRateLimit } from "@/server/rate-limit";
 
 describe("checkRateLimit", () => {
   beforeEach(() => {
@@ -20,5 +20,25 @@ describe("checkRateLimit", () => {
     expect(checkRateLimit("k", 10, 900000)).toBe(false);
     vi.advanceTimersByTime(900001);
     expect(checkRateLimit("k", 10, 900000)).toBe(true);
+  });
+});
+
+describe("isRateLimited", () => {
+  beforeEach(() => {
+    resetRateLimit();
+    vi.useFakeTimers();
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it("peeking doesn't consume attempts", () => {
+    for (let i = 0; i < 20; i++)
+      expect(isRateLimited("peek", 10, 900000)).toBe(false);
+  });
+
+  it("reflects consumed attempts from checkRateLimit without consuming itself", () => {
+    for (let i = 0; i < 10; i++) checkRateLimit("peek2", 10, 900000);
+    expect(isRateLimited("peek2", 10, 900000)).toBe(true);
+    // still blocked after repeated peeks, not un-blocked and not further consumed
+    expect(isRateLimited("peek2", 10, 900000)).toBe(true);
   });
 });

@@ -18,6 +18,13 @@ export function checkRateLimit(
   return true;
 }
 
+export function isRateLimited(key: string, max = 10, windowMs = 15 * 60 * 1000): boolean {
+  const now = Date.now();
+  const recent = (attempts.get(key) ?? []).filter((t) => now - t < windowMs);
+  attempts.set(key, recent);
+  return recent.length >= max;
+}
+
 export function resetRateLimit(): void {
   attempts.clear();
 }
