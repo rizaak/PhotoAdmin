@@ -2,7 +2,7 @@ import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import type { Db } from "@/db";
-import { galleries, photos, sections, type Photo } from "@/db/schema";
+import { galleries, photos, sections, type Gallery, type Photo } from "@/db/schema";
 import { getGallery } from "./galleries";
 
 export const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
@@ -81,16 +81,16 @@ export async function markPhotoError(db: Db, studioId: string, photoId: string):
   await db.update(photos).set({ status: "error" }).where(eq(photos.id, photoId));
 }
 
+export async function listPhotosForGallery(db: Db, gallery: Gallery): Promise<Photo[]> {
+  const base = db.select().from(photos).where(eq(photos.galleryId, gallery.id));
+  if (gallery.photoOrder === "manual") return base.orderBy(asc(photos.position), asc(photos.filename));
+  if (gallery.photoOrder === "filename") return base.orderBy(asc(photos.filename));
+  return base.orderBy(sql`${photos.takenAt} asc nulls last`, asc(photos.filename));
+}
+
 export async function listGalleryPhotos(db: Db, studioId: string, galleryId: string): Promise<Photo[]> {
   const gallery = await getGallery(db, studioId, galleryId);
-  const base = db.select().from(photos).where(eq(photos.galleryId, galleryId));
-  if (gallery.photoOrder === "manual") {
-    return base.orderBy(asc(photos.position), asc(photos.filename));
-  }
-  if (gallery.photoOrder === "filename") {
-    return base.orderBy(asc(photos.filename));
-  }
-  return base.orderBy(sql`${photos.takenAt} asc nulls last`, asc(photos.filename));
+  return listPhotosForGallery(db, gallery);
 }
 
 const idList = z.array(z.string().uuid()).min(1).max(500);
