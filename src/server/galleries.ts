@@ -2,7 +2,7 @@ import { and, desc, eq, ilike } from "drizzle-orm";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import type { Db } from "@/db";
-import { galleries, photos, watermarks, type Gallery, type GalleryStatus } from "@/db/schema";
+import { galleries, photos, watermarks, GALLERY_TEMPLATES, type Gallery, type GalleryStatus } from "@/db/schema";
 import { makeSlug } from "./slug";
 
 const createGallerySchema = z.object({
@@ -14,7 +14,7 @@ export type CreateGalleryInput = z.infer<typeof createGallerySchema>;
 const updateGallerySchema = z.object({
   title: z.string().trim().min(1).max(200).optional(),
   status: z.enum(["draft", "published", "archived"]).optional(),
-  theme: z.enum(["light", "dark"]).optional(),
+  coverTemplate: z.enum(GALLERY_TEMPLATES).optional(),
   photoOrder: z.enum(["capture", "filename", "manual"]).optional(),
   downloadEnabled: z.boolean().optional(),
   resWebEnabled: z.boolean().optional(),

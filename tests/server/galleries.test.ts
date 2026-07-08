@@ -106,6 +106,17 @@ describe("galleries domain", () => {
     await expect(getGallery(db, studio.id, g.id)).rejects.toThrow("NOT_FOUND");
   });
 
+  it("updates the gallery template and rejects unknown values", async () => {
+    const db = await createTestDb();
+    const studio = await seedStudio(db);
+    const g = await createGallery(db, studio.id, { title: "g" });
+    expect(g.coverTemplate).toBe("editorial");
+    const upd = await updateGallerySettings(db, studio.id, g.id, { coverTemplate: "cinematico" });
+    expect(upd.coverTemplate).toBe("cinematico");
+    await expect(updateGallerySettings(db, studio.id, g.id, { coverTemplate: "neon" as never }))
+      .rejects.toThrow();
+  });
+
   it("rejects selecting a watermark from another studio", async () => {
     const db = await createTestDb();
     const s1 = await seedStudio(db);

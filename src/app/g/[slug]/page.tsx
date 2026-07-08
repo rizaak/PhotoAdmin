@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
+import { photos, sections, type GalleryTemplate } from "@/db/schema";
 import { getClientGalleryData, getPublicGallery } from "@/server/client-access";
 import { getOptionalClientSession } from "@/server/client-auth";
 import { presignDownload } from "@/server/storage";
 import {
-  clientViewPhotos, effectiveWatermarkMode, effectiveDownloadEnabled, enabledResolutions, downloadKey,
+  clientViewPhotos, effectiveWatermarkMode, effectiveDownloadEnabled, enabledResolutions, downloadKey, viewKeys,
 } from "@/server/delivery";
 import { AccessForm } from "./access-form";
 import { ClientGallery } from "./client-gallery";
@@ -24,11 +26,32 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
   if (!session) {
     const gallery = await getPublicGallery(db, slug).catch(() => null);
     if (!gallery) notFound();
+    let coverUrl: string | null = null;
+    if (gallery.coverPhotoId) {
+      // Mismos gates de visibilidad que getClientGalleryData: published + ready + sección visible
+      const [cover] = await db.select().from(photos)
+        .where(and(
+          eq(photos.id, gallery.coverPhotoId), eq(photos.galleryId, gallery.id),
+          eq(photos.published, true), eq(photos.status, "ready"),
+        ));
+      const [section] = cover?.sectionId
+        ? await db.select().from(sections)
+          .where(and(eq(sections.id, cover.sectionId), eq(sections.galleryId, gallery.id)))
+        : [];
+      if (cover && (!cover.sectionId || section?.visible)) {
+        const mode = effectiveWatermarkMode(cover, section ?? null,
+          { watermarkMode: gallery.watermarkMode, hasWatermarks: !!gallery.watermarkId });
+        const keys = viewKeys(cover, mode);
+        if (keys) coverUrl = await presignDownload(keys.webKey);
+      }
+    }
     return (
       <AccessForm
         slug={slug}
         galleryTitle={gallery.title}
         hasPassword={gallery.passwordHash !== null}
+        template={gallery.coverTemplate as GalleryTemplate}
+        coverUrl={coverUrl}
         labels={{
           welcome: t("welcome"), emailLabel: t("emailLabel"), nameLabel: t("nameLabel"),
           passwordLabel: t("passwordLabel"), enter: t("enter"),
@@ -60,6 +83,8 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
         sectionId: v.sectionId,
         thumbUrl: await presignDownload(v.thumbKey),
         webUrl: await presignDownload(v.webKey),
+        width: p.width,
+        height: p.height,
         liked: data.likedPhotoIds.includes(p.id),
         comment: data.commentsByPhoto[p.id]?.[0]
           ? { id: data.commentsByPhoto[p.id][0].id, body: data.commentsByPhoto[p.id][0].body }
@@ -83,7 +108,7 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
     <ClientGallery
       slug={slug}
       title={data.gallery.title}
-      theme={data.gallery.theme}
+      template={data.gallery.coverTemplate as GalleryTemplate}
       coverUrl={coverUrl}
       coverFocalX={data.gallery.coverFocalX}
       coverFocalY={data.gallery.coverFocalY}
@@ -98,6 +123,7 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
         resolutions: { web: t("resolutions.web"), high: t("resolutions.high"), original: t("resolutions.original") },
         downloadGallery: t("downloadGallery"), downloadFavorites: t("downloadFavorites"),
         downloadSection: t("downloadSection"), zipError: t("zipError"), zipUnavailable: t("zipUnavailable"),
+        close: t("close"), prev: t("prev"), next: t("next"),
       }}
     />
   );

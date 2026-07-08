@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
+import { GALLERY_TEMPLATES } from "@/db/schema";
 import { requireStudio } from "@/server/auth";
 import { updateGallerySettings } from "@/server/galleries";
 import {
@@ -19,7 +20,7 @@ const id = z.string().uuid();
 const settingsForm = z.object({
   title: z.string().trim().min(1).max(200),
   status: z.enum(["draft", "published", "archived"]),
-  theme: z.enum(["light", "dark"]),
+  coverTemplate: z.enum(GALLERY_TEMPLATES),
   photoOrder: z.enum(["capture", "filename", "manual"]),
   watermarkMode: z.enum(["none", "view", "download", "both"]),
   watermarkId: z.string().uuid().nullable(),
@@ -35,7 +36,7 @@ export async function updateGalleryAction(formData: FormData) {
   const data = settingsForm.parse({
     title: formData.get("title"),
     status: formData.get("status"),
-    theme: formData.get("theme"),
+    coverTemplate: formData.get("coverTemplate"),
     photoOrder: formData.get("photoOrder"),
     watermarkMode: formData.get("watermarkMode"),
     watermarkId: String(formData.get("watermarkId") ?? "") || null,

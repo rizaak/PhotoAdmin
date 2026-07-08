@@ -1,9 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { GalleryTemplate } from "@/db/schema";
+import { TEMPLATE_TOKENS } from "./templates";
+import { fontVariables } from "./fonts";
+import { GalleryCover } from "./gallery-cover";
+import { GalleryHeader } from "./gallery-header";
+import { PhotoGrid } from "./photo-grid";
+import { Lightbox } from "./lightbox";
+import { IconDownload } from "./icons";
 import {
   toggleLikeAction, addCommentAction, downloadPhotoAction, zipRequestAction,
 } from "./actions";
+
+type Res = "web" | "high" | "original";
 
 export type ClientPhoto = {
   id: string;
@@ -11,89 +21,82 @@ export type ClientPhoto = {
   sectionId: string | null;
   thumbUrl: string;
   webUrl: string;
+  width: number | null;
+  height: number | null;
   liked: boolean;
   comment: { id: string; body: string } | null;
-  downloads: ("web" | "high" | "original")[];
+  downloads: Res[];
 };
 
 type Labels = {
   like: string; unlike: string; comments: string; commentPlaceholder: string;
   send: string; empty: string; yourActivity: string; actionError: string;
-  download: string; resolutions: { web: string; high: string; original: string };
+  download: string; resolutions: Record<Res, string>;
   downloadGallery: string; downloadFavorites: string; downloadSection: string;
   zipError: string; zipUnavailable: string;
+  close: string; prev: string; next: string;
 };
 
 export function ClientGallery({
-  slug, title, theme, coverUrl, coverFocalX, coverFocalY,
+  slug, title, template, coverUrl, coverFocalX, coverFocalY,
   sections, photos: initialPhotos, labels, zip,
 }: {
-  slug: string; title: string; theme: "light" | "dark";
+  slug: string; title: string; template: GalleryTemplate;
   coverUrl: string | null; coverFocalX: number; coverFocalY: number;
   sections: { id: string | null; name: string | null }[];
   photos: ClientPhoto[]; labels: Labels;
-  zip: { enabled: boolean; resolutions: ("web" | "high" | "original")[] };
+  zip: { enabled: boolean; resolutions: Res[] };
 }) {
-  const [photos, setPhotos] = useState(initialPhotos);
-  const [openPhoto, setOpenPhoto] = useState<ClientPhoto | null>(null);
-  const [draft, setDraft] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [resolution, setResolution] = useState<"web" | "high" | "original">("web");
-  const [zipResolution, setZipResolution] = useState<"web" | "high" | "original">(
-    zip.resolutions[0] ?? "web",
-  );
+  const tk = TEMPLATE_TOKENS[template];
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const dark = theme === "dark";
-  const bg = dark ? "bg-neutral-950 text-neutral-100" : "bg-white text-neutral-900";
+  const [photos, setPhotos] = useState(initialPhotos);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [zipResolution, setZipResolution] = useState<Res>(zip.resolutions[0] ?? "web");
+
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 4000);
+    return () => clearTimeout(t);
+  }, [notice]);
 
   async function onToggleLike(photo: ClientPhoto) {
     try {
       const { liked } = await toggleLikeAction({ slug, photoId: photo.id });
       setPhotos((prev) => prev.map((p) => (p.id === photo.id ? { ...p, liked } : p)));
-      setOpenPhoto((prev) => (prev && prev.id === photo.id ? { ...prev, liked } : prev));
     } catch {
-      alert(labels.actionError);
+      setNotice(labels.actionError);
     }
   }
 
-  function openLightbox(photo: ClientPhoto) {
-    setOpenPhoto(photo);
-    setDraft(photo.comment?.body ?? "");
-    setResolution(photo.downloads[0] ?? "web");
+  async function onDownload(photo: ClientPhoto, resolution: Res) {
+    const { url } = await downloadPhotoAction({ slug, photoId: photo.id, resolution });
+    window.location.assign(url);
   }
 
-  async function onDownload(photo: ClientPhoto) {
-    try {
-      const { url } = await downloadPhotoAction({ slug, photoId: photo.id, resolution });
-      window.location.assign(url);
-    } catch {
-      alert(labels.actionError);
-    }
-  }
-
-  async function onZip(scope: { type: "gallery" | "favorites" } | { type: "section"; sectionId: string }) {
+  async function onZip(
+    scope: { type: "gallery" | "favorites" } | { type: "section"; sectionId: string },
+    zipResolution: Res,
+  ) {
     try {
       const { url } = await zipRequestAction({ slug, scope, resolution: zipResolution });
       window.location.assign(url);
     } catch (e) {
       const msg = e instanceof Error && e.message.includes("ZIP_NOT_CONFIGURED")
         ? labels.zipUnavailable : labels.zipError;
-      alert(msg);
+      setNotice(msg);
     }
   }
 
-  async function onComment(photo: ClientPhoto) {
-    if (!draft.trim() || busy) return;
+  async function onComment(photo: ClientPhoto, body: string) {
+    if (!body.trim() || busy) return;
     setBusy(true);
     try {
-      const c = await addCommentAction({ slug, photoId: photo.id, body: draft });
-      const update = (p: ClientPhoto) =>
-        p.id === photo.id ? { ...p, comment: { id: c.id, body: c.body } } : p;
-      setPhotos((prev) => prev.map(update));
-      setOpenPhoto((prev) => (prev ? update(prev) : prev));
-      setDraft(c.body);
-    } catch {
-      alert(labels.actionError);
+      const c = await addCommentAction({ slug, photoId: photo.id, body });
+      setPhotos((prev) => prev.map((p) =>
+        p.id === photo.id ? { ...p, comment: { id: c.id, body: c.body } } : p));
     } finally {
       setBusy(false);
     }
@@ -102,141 +105,71 @@ export function ClientGallery({
   const bySection = sections
     .map((s) => ({ ...s, photos: photos.filter((p) => p.sectionId === s.id) }))
     .filter((s) => s.photos.length > 0);
+  const flatPhotos = bySection.flatMap((s) => s.photos);
 
   return (
-    <main className={`min-h-screen ${bg}`}>
-      <header className="relative flex h-[45vh] min-h-64 items-end justify-center overflow-hidden">
-        {coverUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={coverUrl} alt="" draggable={false}
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{ objectPosition: `${coverFocalX * 100}% ${coverFocalY * 100}%` }}
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-        <h1 className="relative pb-10 font-serif text-4xl text-white drop-shadow">{title}</h1>
-      </header>
+    <main className={fontVariables} style={{ background: tk.bg, color: tk.text, fontFamily: tk.body }}>
+      <GalleryCover template={template} title={title} coverUrl={coverUrl} focalX={coverFocalX} focalY={coverFocalY} />
+      <div ref={sentinelRef} className="absolute top-[60vh]" />
+      <GalleryHeader
+        template={template} title={title} sentinel={sentinelRef} zip={zip}
+        resolution={zipResolution} onResolutionChange={setZipResolution}
+        onZip={(scope, res) => void onZip(scope, res)}
+        labels={{
+          downloadGallery: labels.downloadGallery, downloadFavorites: labels.downloadFavorites,
+          resolutions: labels.resolutions,
+        }}
+      />
 
-      <p className="mx-auto max-w-5xl px-4 pt-4 text-xs opacity-60">{labels.yourActivity}</p>
-
-      {zip.enabled && zip.resolutions.length > 0 && (
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-2 px-4 pt-3">
-          <select
-            value={zipResolution}
-            onChange={(e) => setZipResolution(e.target.value as typeof zipResolution)}
-            className="rounded border px-2 py-1.5 text-sm"
-          >
-            {zip.resolutions.map((r) => (
-              <option key={r} value={r}>{labels.resolutions[r]}</option>
-            ))}
-          </select>
-          <button onClick={() => void onZip({ type: "gallery" })} className="rounded border px-3 py-1.5 text-sm">
-            ⬇ {labels.downloadGallery}
-          </button>
-          <button onClick={() => void onZip({ type: "favorites" })} className="rounded border px-3 py-1.5 text-sm">
-            ⬇ {labels.downloadFavorites}
-          </button>
-        </div>
-      )}
+      <p className="mx-auto max-w-6xl px-4 pt-10 text-xs opacity-60">{labels.yourActivity}</p>
 
       {photos.length === 0 && <p className="p-10 text-center text-sm opacity-60">{labels.empty}</p>}
 
-      <div className="mx-auto max-w-5xl space-y-10 p-4">
+      <div className="mx-auto max-w-6xl space-y-10 p-4">
         {bySection.map((s) => (
           <section key={s.id ?? "none"}>
             {s.name && (
-              <h2 className="mb-3 flex items-center gap-2 font-serif text-2xl">
+              <h2
+                className="mb-3 flex items-center gap-2 text-2xl"
+                style={{ fontFamily: tk.display, fontWeight: tk.displayWeight, fontStyle: tk.displayStyle,
+                  textTransform: tk.displayTransform, letterSpacing: tk.displayTracking }}
+              >
                 {s.name}
                 {zip.enabled && zip.resolutions.length > 0 && s.id && (
                   <button
                     title={labels.downloadSection}
                     aria-label={labels.downloadSection}
-                    onClick={() => void onZip({ type: "section", sectionId: s.id! })}
-                    className="text-sm font-sans opacity-60 hover:opacity-100"
+                    onClick={() => void onZip({ type: "section", sectionId: s.id! }, zipResolution)}
+                    className="opacity-60 hover:opacity-100"
                   >
-                    ⬇
+                    <IconDownload className="h-4 w-4" />
                   </button>
                 )}
               </h2>
             )}
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-              {s.photos.map((p) => (
-                <figure key={p.id} className="group relative cursor-pointer" onClick={() => openLightbox(p)}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.thumbUrl} alt={p.filename} draggable={false}
-                    className="aspect-square w-full rounded object-cover" />
-                  <button
-                    aria-label={p.liked ? labels.unlike : labels.like}
-                    onClick={(e) => { e.stopPropagation(); void onToggleLike(p); }}
-                    className={`absolute right-2 top-2 rounded-full px-2 py-1 text-sm backdrop-blur ${
-                      p.liked ? "bg-red-500 text-white" : "bg-black/40 text-white opacity-0 group-hover:opacity-100"
-                    }`}
-                  >
-                    ♥
-                  </button>
-                  {p.comment && (
-                    <span className="absolute bottom-2 right-2 rounded bg-black/50 px-1.5 text-xs text-white">
-                      💬
-                    </span>
-                  )}
-                </figure>
-              ))}
-            </div>
+            <PhotoGrid
+              template={template} photos={s.photos} onOpen={(p) => setOpenId(p.id)}
+              onToggleLike={(p) => void onToggleLike(p)}
+              likeLabel={labels.like} unlikeLabel={labels.unlike}
+            />
           </section>
         ))}
       </div>
 
-      {openPhoto && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-black/90 md:flex-row" onClick={() => setOpenPhoto(null)}>
-          <div className="flex flex-1 items-center justify-center p-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={openPhoto.webUrl} alt={openPhoto.filename}
-              className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
-          </div>
-          <aside
-            className="w-full space-y-3 bg-white p-4 text-neutral-900 md:h-full md:w-80 md:overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => void onToggleLike(openPhoto)}
-              className={`rounded px-3 py-1.5 text-sm ${openPhoto.liked ? "bg-red-500 text-white" : "border"}`}
-            >
-              ♥ {openPhoto.liked ? labels.unlike : labels.like}
-            </button>
-            {openPhoto.downloads.length > 0 && (
-              <div className="flex items-center gap-2">
-                <select value={resolution} onChange={(e) => setResolution(e.target.value as typeof resolution)}
-                  className="rounded border px-2 py-1.5 text-sm">
-                  {openPhoto.downloads.map((r) => (
-                    <option key={r} value={r}>{labels.resolutions[r]}</option>
-                  ))}
-                </select>
-                <button
-                  disabled={busy}
-                  onClick={() => void onDownload(openPhoto)}
-                  className="rounded border px-3 py-1.5 text-sm"
-                >
-                  ⬇ {labels.download}
-                </button>
-              </div>
-            )}
-            <h3 className="text-sm font-medium">{labels.comments}</h3>
-            <div className="space-y-2">
-              <textarea
-                value={draft} onChange={(e) => setDraft(e.target.value)}
-                placeholder={labels.commentPlaceholder}
-                rows={3}
-                className="w-full resize-none rounded border px-2 py-1.5 text-sm"
-              />
-              <button disabled={busy} onClick={() => void onComment(openPhoto)}
-                className="rounded bg-neutral-900 px-3 py-1.5 text-sm text-white disabled:opacity-50">
-                {labels.send}
-              </button>
-            </div>
-          </aside>
+      {notice && (
+        <div
+          className="fixed bottom-4 left-1/2 z-[60] -translate-x-1/2 rounded-full px-4 py-2 text-xs shadow-lg"
+          style={{ background: tk.surface, color: tk.text }}
+        >
+          {notice}
         </div>
       )}
+
+      <Lightbox
+        photos={flatPhotos} openId={openId} busy={busy} labels={labels}
+        onClose={() => setOpenId(null)} onNavigate={setOpenId}
+        onToggleLike={onToggleLike} onDownload={onDownload} onComment={onComment}
+      />
     </main>
   );
 }

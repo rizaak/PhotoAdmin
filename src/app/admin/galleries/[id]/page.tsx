@@ -91,10 +91,12 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            {t("theme")}
-            <select name="theme" defaultValue={gallery.theme} className={input}>
-              <option value="light">{t("themes.light")}</option>
-              <option value="dark">{t("themes.dark")}</option>
+            {t("template")}
+            <select name="coverTemplate" defaultValue={gallery.coverTemplate} className={input}>
+              <option value="editorial">{t("templates.editorial")}</option>
+              <option value="cinematico">{t("templates.cinematico")}</option>
+              <option value="luminoso">{t("templates.luminoso")}</option>
+              <option value="clasico">{t("templates.clasico")}</option>
             </select>
           </label>
           <label className="flex flex-col gap-1">

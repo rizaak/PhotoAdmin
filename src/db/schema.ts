@@ -17,6 +17,9 @@ export const watermarkPlacementEnum = pgEnum("watermark_placement", [
   "tl", "tc", "tr", "ml", "center", "mr", "bl", "bc", "br", "tile",
 ]);
 
+export const GALLERY_TEMPLATES = ["editorial", "cinematico", "luminoso", "clasico"] as const;
+export type GalleryTemplate = (typeof GALLERY_TEMPLATES)[number];
+
 export const studios = pgTable("studios", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
@@ -35,7 +38,7 @@ export const galleries = pgTable("galleries", {
   status: galleryStatusEnum("status").notNull().default("draft"),
   passwordHash: text("password_hash"),
   coverPhotoId: uuid("cover_photo_id").references((): AnyPgColumn => photos.id, { onDelete: "set null" }),
-  coverTemplate: text("cover_template").notNull().default("classic"),
+  coverTemplate: text("cover_template").notNull().default("editorial"),
   coverFocalX: real("cover_focal_x").notNull().default(0.5),
   coverFocalY: real("cover_focal_y").notNull().default(0.5),
   theme: galleryThemeEnum("theme").notNull().default("light"),

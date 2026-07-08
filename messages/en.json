@@ -52,8 +52,8 @@
     "settings": "Settings",
     "title": "Title",
     "status": "Status",
-    "theme": "Theme",
-    "themes": { "light": "Light", "dark": "Dark" },
+    "template": "Template",
+    "templates": { "editorial": "Editorial", "cinematico": "Cinematic dark", "luminoso": "Soft & bright", "clasico": "Classic elegant" },
     "photoOrder": "Photo order",
     "orders": { "capture": "Capture date", "filename": "Filename", "manual": "Manual" },
     "watermarkMode": "Watermark",
@@ -182,6 +182,9 @@
     "downloadFavorites": "Download my favorites",
     "downloadSection": "Download this section",
     "zipError": "No photos are available to download.",
-    "zipUnavailable": "ZIP download is not available right now."
+    "zipUnavailable": "ZIP download is not available right now.",
+    "close": "Close",
+    "prev": "Previous",
+    "next": "Next"
   }
 }

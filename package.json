@@ -19,6 +19,7 @@
     "drizzle-orm": "^0.45.2",
     "exif-reader": "^2.0.3",
     "jose": "^6.2.3",
+    "motion": "^12.42.2",
     "nanoid": "^5.1.16",
     "next": "16.2.10",
     "next-intl": "^4.13.1",
