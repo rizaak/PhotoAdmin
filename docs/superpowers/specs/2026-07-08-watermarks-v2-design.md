@@ -120,3 +120,13 @@ aplica.
 - Coordenadas libres / drag de posición (elegido: grid 3×3 + mosaico).
 - Biblioteca de logos reutilizables (innecesaria con set global).
 - Rotación, color de texto, fuentes personalizadas.
+
+## Addendum (2026-07-08): selección por galería
+
+Corrección de producto: las ≤3 marcas NO se componen — son alternativas. `galleries.watermark_id`
+(FK nullable → watermarks, SET NULL) selecciona la marca de la galería; el gate de delivery pasa a
+`!!gallery.watermarkId`. Invalidación acotada: mutar una marca limpia claves `-wm` solo de las
+galerías que la seleccionaron; cambiar la selección limpia solo esa galería; crear una marca nueva
+no limpia nada. El preview de Configuración muestra una marca a la vez (picker de slot).
+Migración 0006: cada galería queda con la marca de slot más bajo de su estudio (comportamiento
+previo más cercano).

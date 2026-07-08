@@ -7,8 +7,8 @@
     "title": "Settings",
     "watermarks": {
       "title": "Watermarks",
-      "intro": "Up to 3 marks applied to every gallery with watermarking enabled.",
-      "regenNote": "After saving, existing photos will need updating — you'll see the \"Update photos\" banner in each gallery.",
+      "intro": "Set up to 3 watermarks; each gallery picks which one to use (or none).",
+      "regenNote": "Galleries using this mark will need to regenerate their photos — you'll see the banner on each one.",
       "add": "+ Add mark",
       "slot": "Mark {n}",
       "typeText": "Text",
@@ -29,7 +29,8 @@
       "error": "Could not save. Try again.",
       "preview": "Preview",
       "previewLoading": "Generating preview…",
-      "previewError": "Preview could not be generated."
+      "previewError": "Preview could not be generated.",
+      "previewPick": "Preview mark"
     }
   },
   "galleries": {
@@ -57,6 +58,20 @@
     "orders": { "capture": "Capture date", "filename": "Filename", "manual": "Manual" },
     "watermarkMode": "Watermark",
     "watermarks": { "none": "None", "view": "On view", "download": "On download", "both": "Both" },
+    "watermark": "Watermark",
+    "watermarkNone": "No watermark",
+    "placements": {
+      "tl": "top left",
+      "tc": "top center",
+      "tr": "top right",
+      "ml": "middle left",
+      "center": "center",
+      "mr": "middle right",
+      "bl": "bottom left",
+      "bc": "bottom center",
+      "br": "bottom right",
+      "tile": "tile"
+    },
     "watermarkHint": "Watermarks are configured in",
     "watermarkHintLink": "Settings →",
     "overrides": {

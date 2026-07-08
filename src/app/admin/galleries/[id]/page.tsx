@@ -42,7 +42,8 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
   );
   const tp = await getTranslations("galleryDetail.photos");
   const tu = await getTranslations("galleryDetail.upload");
-  const hasWatermarks = (await listWatermarks(db, studio.id)).length > 0;
+  const studioMarks = await listWatermarks(db, studio.id);
+  const hasWatermarks = !!gallery.watermarkId;
   const pendingReprocess = photoRows
     .filter((p) =>
       p.status === "error" ||
@@ -117,6 +118,17 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
             {t("watermarkHint")}{" "}
             <Link href="/admin/settings" className="underline">{t("watermarkHintLink")}</Link>
           </p>
+          <label className="flex flex-col gap-1">
+            {t("watermark")}
+            <select name="watermarkId" defaultValue={gallery.watermarkId ?? ""} className={input}>
+              <option value="">{t("watermarkNone")}</option>
+              {studioMarks.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {`${m.slot + 1}. ${m.type === "text" ? m.text : "PNG"} · ${t(`placements.${m.placement}`)}`}
+                </option>
+              ))}
+            </select>
+          </label>
           <fieldset className="col-span-2 flex flex-wrap items-center gap-4">
             <label className="flex items-center gap-2">
               <input type="checkbox" name="downloadEnabled" defaultChecked={gallery.downloadEnabled} className={check} />
