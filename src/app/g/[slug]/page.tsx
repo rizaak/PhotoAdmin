@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { getClientGalleryData, getPublicGallery } from "@/server/client-access";
 import { getOptionalClientSession } from "@/server/client-auth";
 import { presignDownload } from "@/server/storage";
+import { clientViewPhotos } from "@/server/delivery";
 import { AccessForm } from "./access-form";
 import { ClientGallery } from "./client-gallery";
 
@@ -37,21 +38,26 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
   }
 
   const data = await getClientGalleryData(db, session.gallery.id, session.clientId);
+  const viewList = clientViewPhotos(data.photos, data.sections, data.gallery);
+  const byId = new Map(data.photos.map((p) => [p.id, p]));
   const photoViews = await Promise.all(
-    data.photos.map(async (p) => ({
-      id: p.id,
-      filename: p.filename,
-      sectionId: p.sectionId,
-      thumbUrl: p.thumbKey ? await presignDownload(p.thumbKey) : "",
-      webUrl: p.webKey ? await presignDownload(p.webKey) : "",
-      liked: data.likedPhotoIds.includes(p.id),
-      comment: data.commentsByPhoto[p.id]?.[0]
-        ? { id: data.commentsByPhoto[p.id][0].id, body: data.commentsByPhoto[p.id][0].body }
-        : null,
-    })),
+    viewList.map(async (v) => {
+      const p = byId.get(v.id)!;
+      return {
+        id: p.id,
+        filename: p.filename,
+        sectionId: v.sectionId,
+        thumbUrl: await presignDownload(v.thumbKey),
+        webUrl: await presignDownload(v.webKey),
+        liked: data.likedPhotoIds.includes(p.id),
+        comment: data.commentsByPhoto[p.id]?.[0]
+          ? { id: data.commentsByPhoto[p.id][0].id, body: data.commentsByPhoto[p.id][0].body }
+          : null,
+      };
+    }),
   );
-  const cover = data.photos.find((p) => p.id === data.gallery.coverPhotoId);
-  const coverUrl = cover?.webKey ? await presignDownload(cover.webKey) : null;
+  const cover = viewList.find((v) => v.id === data.gallery.coverPhotoId);
+  const coverUrl = cover ? await presignDownload(cover.webKey) : null;
   const sectionBlocks: { id: string | null; name: string | null }[] = [
     { id: null, name: null },
     ...data.sections.map((s) => ({ id: s.id, name: s.name })),

@@ -51,6 +51,25 @@ export function viewKeys(
   return { thumbKey: thumb, webKey: web };
 }
 
+export function clientViewPhotos<
+  P extends PhotoKeys & { id: string; sectionId: string | null; watermarkOverride: boolean | null },
+>(
+  photos: P[],
+  sections: { id: string; watermarkMode: WatermarkMode | null }[],
+  gallery: { watermarkMode: WatermarkMode; watermarkText: string | null },
+): { id: string; sectionId: string | null; thumbKey: string; webKey: string }[] {
+  const sectionById = new Map(sections.map((s) => [s.id, s]));
+  const out: { id: string; sectionId: string | null; thumbKey: string; webKey: string }[] = [];
+  for (const photo of photos) {
+    const section = photo.sectionId ? sectionById.get(photo.sectionId) ?? null : null;
+    const mode = effectiveWatermarkMode(photo, section, gallery);
+    const view = viewKeys(photo, mode);
+    if (!view) continue;
+    out.push({ id: photo.id, sectionId: photo.sectionId, ...view });
+  }
+  return out;
+}
+
 export function downloadKey(
   photo: PhotoKeys, mode: WatermarkMode, resolution: Resolution,
 ): string | null {

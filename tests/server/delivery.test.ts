@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   effectiveWatermarkMode, effectiveDownloadEnabled, enabledResolutions, viewKeys, downloadKey,
+  clientViewPhotos,
 } from "@/server/delivery";
 
 const keys = {
@@ -61,5 +62,22 @@ describe("downloadKey", () => {
   it("returns null when the variant key is missing", () => {
     expect(downloadKey({ ...keys, highKey: null }, "none", "high")).toBeNull();
     expect(downloadKey({ ...keys, webWmKey: null }, "download", "web")).toBeNull();
+  });
+});
+
+describe("clientViewPhotos", () => {
+  const base = { ...keys, watermarkOverride: null as boolean | null };
+  const sections = [{ id: "s1", watermarkMode: null }, { id: "s2", watermarkMode: "view" as const }];
+
+  it("serves clean or wm keys per photo and excludes photos missing required variants", () => {
+    const photos = [
+      { ...base, id: "a", sectionId: null },              // hereda galería (none)
+      { ...base, id: "b", sectionId: "s2" },              // sección exige view → wm
+      { ...base, id: "c", sectionId: "s2", webWmKey: null }, // falta variante → excluida
+    ];
+    const out = clientViewPhotos(photos, sections, { watermarkMode: "none", watermarkText: "©" });
+    expect(out.map((p) => p.id)).toEqual(["a", "b"]);
+    expect(out[0].webKey).toBe("w");
+    expect(out[1].webKey).toBe("wwm");
   });
 });
