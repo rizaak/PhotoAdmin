@@ -113,10 +113,10 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
               <option value="both">{t("watermarks.both")}</option>
             </select>
           </label>
-          <label className="flex flex-col gap-1">
-            {t("watermarkText")}
-            <input name="watermarkText" defaultValue={gallery.watermarkText ?? ""} maxLength={100} className={input} />
-          </label>
+          <p className="col-span-2 -mt-2 text-xs text-neutral-500">
+            {t("watermarkHint")}{" "}
+            <Link href="/admin/settings" className="underline">{t("watermarkHintLink")}</Link>
+          </p>
           <fieldset className="col-span-2 flex flex-wrap items-center gap-4">
             <label className="flex items-center gap-2">
               <input type="checkbox" name="downloadEnabled" defaultChecked={gallery.downloadEnabled} className={check} />

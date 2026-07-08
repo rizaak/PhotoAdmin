@@ -57,7 +57,8 @@
     "orders": { "capture": "Fecha de captura", "filename": "Nombre de archivo", "manual": "Manual" },
     "watermarkMode": "Marca de agua",
     "watermarks": { "none": "Sin marca", "view": "En vista", "download": "En descarga", "both": "Ambas" },
-    "watermarkText": "Texto de la marca de agua (vacío = sin marca)",
+    "watermarkHint": "Las marcas se configuran en",
+    "watermarkHintLink": "Configuración →",
     "overrides": {
       "inherit": "Heredar",
       "watermark": "Marca",

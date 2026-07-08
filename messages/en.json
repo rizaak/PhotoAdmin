@@ -57,7 +57,8 @@
     "orders": { "capture": "Capture date", "filename": "Filename", "manual": "Manual" },
     "watermarkMode": "Watermark",
     "watermarks": { "none": "None", "view": "On view", "download": "On download", "both": "Both" },
-    "watermarkText": "Watermark text (empty = no watermark)",
+    "watermarkHint": "Watermarks are configured in",
+    "watermarkHintLink": "Settings →",
     "overrides": {
       "inherit": "Inherit",
       "watermark": "Watermark",

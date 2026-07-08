@@ -21,7 +21,6 @@ const updateGallerySchema = z.object({
   resHighEnabled: z.boolean().optional(),
   resOriginalEnabled: z.boolean().optional(),
   watermarkMode: z.enum(["none", "view", "download", "both"]).optional(),
-  watermarkText: z.string().max(100).nullable().optional(),
   password: z.string().min(4).max(100).nullable().optional(),
 });
 export type UpdateGalleryInput = z.infer<typeof updateGallerySchema>;
