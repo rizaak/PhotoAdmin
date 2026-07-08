@@ -14,11 +14,12 @@ async function setup() {
   const db = await createTestDb();
   const studio = await seedStudio(db);
   const gallery = await createGallery(db, studio.id, { title: "Boda" });
-  return { db, studio, gallery };
+  const section = await createSection(db, studio.id, gallery.id, "Fotos");
+  return { db, studio, gallery, section };
 }
 
-const upload = (name = "IMG_0001.jpg") => ({
-  filename: name, size: 1000, contentType: "image/jpeg" as const, sectionId: null,
+const upload = (sectionId: string, name = "IMG_0001.jpg") => ({
+  filename: name, size: 1000, contentType: "image/jpeg" as const, sectionId,
 });
 
 describe("photos domain", () => {
@@ -28,8 +29,8 @@ describe("photos domain", () => {
   });
 
   it("registers an upload as processing with tenant-prefixed key", async () => {
-    const { db, studio, gallery } = await setup();
-    const photo = await registerUpload(db, studio.id, gallery.id, upload());
+    const { db, studio, gallery, section } = await setup();
+    const photo = await registerUpload(db, studio.id, gallery.id, upload(section.id));
     expect(photo.status).toBe("processing");
     expect(photo.originalKey).toBe(
       `studios/${studio.id}/galleries/${gallery.id}/${photo.id}/orig-IMG_0001.jpg`,
@@ -38,16 +39,16 @@ describe("photos domain", () => {
   });
 
   it("rejects bad content types and oversized files", async () => {
-    const { db, studio, gallery } = await setup();
-    await expect(registerUpload(db, studio.id, gallery.id, { ...upload(), contentType: "video/mp4" as never }))
+    const { db, studio, gallery, section } = await setup();
+    await expect(registerUpload(db, studio.id, gallery.id, { ...upload(section.id), contentType: "video/mp4" as never }))
       .rejects.toThrow();
-    await expect(registerUpload(db, studio.id, gallery.id, { ...upload(), size: 101 * 1024 * 1024 }))
+    await expect(registerUpload(db, studio.id, gallery.id, { ...upload(section.id), size: 101 * 1024 * 1024 }))
       .rejects.toThrow();
   });
 
   it("completes processing and marks errors", async () => {
-    const { db, studio, gallery } = await setup();
-    const p = await registerUpload(db, studio.id, gallery.id, upload());
+    const { db, studio, gallery, section } = await setup();
+    const p = await registerUpload(db, studio.id, gallery.id, upload(section.id));
     const done = await completeProcessing(db, studio.id, p.id, {
       width: 3000, height: 2000, takenAt: new Date("2026-05-01T10:00:00Z"),
       thumbKey: "k/thumb.jpg", webKey: "k/web.jpg", sizeDerivativesBytes: 500, sizeOriginalBytes: 1000,
@@ -56,11 +57,11 @@ describe("photos domain", () => {
     expect(done.width).toBe(3000);
     expect(done.sizeOriginalBytes).toBe(1000);
 
-    const p2 = await registerUpload(db, studio.id, gallery.id, upload("b.jpg"));
+    const p2 = await registerUpload(db, studio.id, gallery.id, upload(section.id, "b.jpg"));
     await markPhotoError(db, studio.id, p2.id);
     expect((await getOwnedPhoto(db, studio.id, p2.id)).status).toBe("error");
 
-    const p3 = await registerUpload(db, studio.id, gallery.id, upload("c.jpg"));
+    const p3 = await registerUpload(db, studio.id, gallery.id, upload(section.id, "c.jpg"));
     const full = await completeProcessing(db, studio.id, p3.id, {
       width: 1, height: 1, takenAt: null, thumbKey: "t", webKey: "w",
       highKey: "h", thumbWmKey: "twm", webWmKey: "wwm", highWmKey: "hwm",
@@ -74,11 +75,11 @@ describe("photos domain", () => {
   });
 
   it("lists photos ordered by gallery photoOrder", async () => {
-    const { db, studio, gallery } = await setup();
+    const { db, studio, gallery, section } = await setup();
     // filename "aaa" pero tomada después (01-02); filename "bbb" tomada antes (01-01):
     // así capture order y filename order difieren y el test no es tautológico.
-    const a = await registerUpload(db, studio.id, gallery.id, upload("aaa.jpg"));
-    const b = await registerUpload(db, studio.id, gallery.id, upload("bbb.jpg"));
+    const a = await registerUpload(db, studio.id, gallery.id, upload(section.id, "aaa.jpg"));
+    const b = await registerUpload(db, studio.id, gallery.id, upload(section.id, "bbb.jpg"));
     await completeProcessing(db, studio.id, a.id, {
       width: 1, height: 1, takenAt: new Date("2026-01-02"), thumbKey: "t", webKey: "w", sizeDerivativesBytes: 1, sizeOriginalBytes: 1000,
     });
@@ -100,25 +101,25 @@ describe("photos domain", () => {
   });
 
   it("moves photos between sections, validating section ownership", async () => {
-    const { db, studio, gallery } = await setup();
-    const section = await createSection(db, studio.id, gallery.id, "Selección");
+    const { db, studio, gallery, section: initial } = await setup();
+    const target = await createSection(db, studio.id, gallery.id, "Selección");
     const other = await createGallery(db, studio.id, { title: "Otra" });
     const foreign = await createSection(db, studio.id, other.id, "Ajena");
-    const p = await registerUpload(db, studio.id, gallery.id, upload());
+    const p = await registerUpload(db, studio.id, gallery.id, upload(initial.id));
 
-    await movePhotos(db, studio.id, gallery.id, [p.id], section.id);
-    expect((await getOwnedPhoto(db, studio.id, p.id)).sectionId).toBe(section.id);
+    await movePhotos(db, studio.id, gallery.id, [p.id], target.id);
+    expect((await getOwnedPhoto(db, studio.id, p.id)).sectionId).toBe(target.id);
 
-    await movePhotos(db, studio.id, gallery.id, [p.id], null);
-    expect((await getOwnedPhoto(db, studio.id, p.id)).sectionId).toBeNull();
+    await movePhotos(db, studio.id, gallery.id, [p.id], initial.id);
+    expect((await getOwnedPhoto(db, studio.id, p.id)).sectionId).toBe(initial.id);
 
     await expect(movePhotos(db, studio.id, gallery.id, [p.id], foreign.id))
       .rejects.toThrow("SECTION_NOT_IN_GALLERY");
   });
 
   it("publishes/hides, deletes returning R2 keys, and sets cover", async () => {
-    const { db, studio, gallery } = await setup();
-    const p = await registerUpload(db, studio.id, gallery.id, upload());
+    const { db, studio, gallery, section } = await setup();
+    const p = await registerUpload(db, studio.id, gallery.id, upload(section.id));
     await completeProcessing(db, studio.id, p.id, {
       width: 1, height: 1, takenAt: null, thumbKey: "k/thumb.jpg", webKey: "k/web.jpg",
       highKey: "k/high.jpg", thumbWmKey: "k/thumb-wm.jpg", webWmKey: "k/web-wm.jpg", highWmKey: "k/high-wm.jpg",
@@ -146,13 +147,14 @@ describe("photos domain", () => {
   });
 
   it("computes storage totals per gallery and total", async () => {
-    const { db, studio, gallery } = await setup();
+    const { db, studio, gallery, section } = await setup();
     const other = await createGallery(db, studio.id, { title: "Otra" });
-    const p1 = await registerUpload(db, studio.id, gallery.id, upload());
+    const otherSection = await createSection(db, studio.id, other.id, "Fotos");
+    const p1 = await registerUpload(db, studio.id, gallery.id, upload(section.id));
     await completeProcessing(db, studio.id, p1.id, {
       width: 1, height: 1, takenAt: null, thumbKey: "t", webKey: "w", sizeDerivativesBytes: 200, sizeOriginalBytes: 1000,
     });
-    await registerUpload(db, studio.id, other.id, { ...upload("x.jpg"), size: 5000 });
+    await registerUpload(db, studio.id, other.id, { ...upload(otherSection.id, "x.jpg"), size: 5000 });
 
     const totals = await storageTotals(db, studio.id);
     expect(totals.perGallery[gallery.id]).toBe(1200); // 1000 orig + 200 deriv
@@ -161,8 +163,8 @@ describe("photos domain", () => {
   });
 
   it("sets watermark override per photo batch", async () => {
-    const { db, studio, gallery } = await setup();
-    const p = await registerUpload(db, studio.id, gallery.id, upload());
+    const { db, studio, gallery, section } = await setup();
+    const p = await registerUpload(db, studio.id, gallery.id, upload(section.id));
     await setPhotosWatermarkOverride(db, studio.id, gallery.id, [p.id], true);
     expect((await getOwnedPhoto(db, studio.id, p.id)).watermarkOverride).toBe(true);
     await setPhotosWatermarkOverride(db, studio.id, gallery.id, [p.id], null);
@@ -172,11 +174,11 @@ describe("photos domain", () => {
   });
 
   it("is tenant-scoped for every mutator", async () => {
-    const { db, studio, gallery } = await setup();
+    const { db, studio, gallery, section } = await setup();
     const intruder = await seedStudio(db, "auth0|intruder");
-    const p = await registerUpload(db, studio.id, gallery.id, upload());
+    const p = await registerUpload(db, studio.id, gallery.id, upload(section.id));
 
-    await expect(registerUpload(db, intruder.id, gallery.id, upload())).rejects.toThrow("NOT_FOUND");
+    await expect(registerUpload(db, intruder.id, gallery.id, upload(section.id))).rejects.toThrow("NOT_FOUND");
     await expect(getOwnedPhoto(db, intruder.id, p.id)).rejects.toThrow("NOT_FOUND");
     await expect(completeProcessing(db, intruder.id, p.id, {
       width: 1, height: 1, takenAt: null, thumbKey: "t", webKey: "w", sizeDerivativesBytes: 1, sizeOriginalBytes: 1000,

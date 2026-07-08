@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { GalleryTemplate } from "@/db/schema";
-import { TEMPLATE_TOKENS } from "./templates";
+import { PALETTE_TOKENS, FONT_TOKENS, type GalleryDesign } from "./design-options";
 import { fontVariables } from "./fonts";
 import { GalleryCover } from "./gallery-cover";
 import { GalleryHeader } from "./gallery-header";
@@ -38,16 +37,17 @@ type Labels = {
 };
 
 export function ClientGallery({
-  slug, title, template, coverUrl, coverFocalX, coverFocalY,
+  slug, title, design, coverUrl, coverFocalX, coverFocalY,
   sections, photos: initialPhotos, labels, zip,
 }: {
-  slug: string; title: string; template: GalleryTemplate;
+  slug: string; title: string; design: GalleryDesign;
   coverUrl: string | null; coverFocalX: number; coverFocalY: number;
   sections: { id: string | null; name: string | null }[];
   photos: ClientPhoto[]; labels: Labels;
   zip: { enabled: boolean; resolutions: Res[] };
 }) {
-  const tk = TEMPLATE_TOKENS[template];
+  const pt = PALETTE_TOKENS[design.palette];
+  const ft = FONT_TOKENS[design.fontSet];
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const [photos, setPhotos] = useState(initialPhotos);
@@ -108,11 +108,11 @@ export function ClientGallery({
   const flatPhotos = bySection.flatMap((s) => s.photos);
 
   return (
-    <main className={fontVariables} style={{ background: tk.bg, color: tk.text, fontFamily: tk.body }}>
-      <GalleryCover template={template} title={title} coverUrl={coverUrl} focalX={coverFocalX} focalY={coverFocalY} />
+    <main className={fontVariables} style={{ background: pt.bg, color: pt.text, fontFamily: ft.body }}>
+      <GalleryCover design={design} title={title} coverUrl={coverUrl} focalX={coverFocalX} focalY={coverFocalY} />
       <div ref={sentinelRef} className="absolute top-[60vh]" />
       <GalleryHeader
-        template={template} title={title} sentinel={sentinelRef} zip={zip}
+        design={design} title={title} sentinel={sentinelRef} zip={zip}
         resolution={zipResolution} onResolutionChange={setZipResolution}
         onZip={(scope, res) => void onZip(scope, res)}
         labels={{
@@ -131,8 +131,8 @@ export function ClientGallery({
             {s.name && (
               <h2
                 className="mb-3 flex items-center gap-2 text-2xl"
-                style={{ fontFamily: tk.display, fontWeight: tk.displayWeight, fontStyle: tk.displayStyle,
-                  textTransform: tk.displayTransform, letterSpacing: tk.displayTracking }}
+                style={{ fontFamily: ft.display, fontWeight: ft.displayWeight, fontStyle: ft.displayStyle,
+                  textTransform: ft.displayTransform, letterSpacing: ft.displayTracking }}
               >
                 {s.name}
                 {zip.enabled && zip.resolutions.length > 0 && s.id && (
@@ -148,7 +148,7 @@ export function ClientGallery({
               </h2>
             )}
             <PhotoGrid
-              template={template} photos={s.photos} onOpen={(p) => setOpenId(p.id)}
+              design={design} photos={s.photos} onOpen={(p) => setOpenId(p.id)}
               onToggleLike={(p) => void onToggleLike(p)}
               likeLabel={labels.like} unlikeLabel={labels.unlike}
             />
@@ -159,7 +159,7 @@ export function ClientGallery({
       {notice && (
         <div
           className="fixed bottom-4 left-1/2 z-[60] -translate-x-1/2 rounded-full px-4 py-2 text-xs shadow-lg"
-          style={{ background: tk.surface, color: tk.text }}
+          style={{ background: pt.surface, color: pt.text }}
         >
           {notice}
         </div>

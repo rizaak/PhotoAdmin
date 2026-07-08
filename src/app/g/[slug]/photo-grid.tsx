@@ -1,29 +1,27 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import type { GalleryTemplate } from "@/db/schema";
-import { TEMPLATE_TOKENS } from "./templates";
+import { GRID_TOKENS, PHOTO_RADIUS, type GalleryDesign } from "./design-options";
 import { aspectRatio, flexProps } from "./gallery-layout";
 import { IconHeart, IconComment } from "./icons";
 import type { ClientPhoto } from "./client-gallery";
 
 export function PhotoGrid({
-  template, photos, onOpen, onToggleLike, likeLabel, unlikeLabel,
+  design, photos, onOpen, onToggleLike, likeLabel, unlikeLabel,
 }: {
-  template: GalleryTemplate; photos: ClientPhoto[];
+  design: GalleryDesign; photos: ClientPhoto[];
   onOpen: (p: ClientPhoto) => void; onToggleLike: (p: ClientPhoto) => void;
   likeLabel: string; unlikeLabel: string;
 }) {
-  const tk = TEMPLATE_TOKENS[template];
+  // ponytail: "cuadrada" still lays out as flex rows (its own grid lands in Task 3); targetH falls back to justificada's.
+  const gt = GRID_TOKENS[design.gridStyle];
   const reduce = useReducedMotion();
-  const frame = tk.photoFrame
-    ? { border: "5px solid #ffffff", boxShadow: "0 2px 14px rgba(0,0,0,.14)" } : {};
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap" style={{ gap: gt.gap }}>
       {photos.map((p, i) => {
         const ar = aspectRatio(p);
-        const { flexGrow, flexBasis } = flexProps(ar, 280);
+        const { flexGrow, flexBasis } = flexProps(ar, gt.targetH || GRID_TOKENS.justificada.targetH);
         return (
           <motion.figure
             key={p.id}
@@ -32,8 +30,7 @@ export function PhotoGrid({
             viewport={{ once: true, margin: "0px 0px -60px 0px" }}
             transition={{ duration: 0.5, delay: (i % 6) * 0.05 }}
             className="group relative cursor-pointer overflow-hidden"
-            style={{ aspectRatio: String(ar), flexGrow, flexBasis: `${flexBasis}px`,
-              borderRadius: tk.photoRadius, ...frame }}
+            style={{ aspectRatio: String(ar), flexGrow, flexBasis: `${flexBasis}px`, borderRadius: PHOTO_RADIUS }}
             onClick={() => onOpen(p)}
           >
             <motion.img layoutId={`photo-${p.id}`} src={p.thumbUrl} alt={p.filename} draggable={false}

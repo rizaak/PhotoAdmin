@@ -52,8 +52,6 @@
     "settings": "Configuración",
     "title": "Título",
     "status": "Estado",
-    "template": "Plantilla",
-    "templates": { "editorial": "Editorial", "cinematico": "Cinemático oscuro", "luminoso": "Luminoso tierno", "clasico": "Clásico elegante" },
     "photoOrder": "Orden de fotos",
     "orders": { "capture": "Fecha de captura", "filename": "Nombre de archivo", "manual": "Manual" },
     "watermarkMode": "Marca de agua",

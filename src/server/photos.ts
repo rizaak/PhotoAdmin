@@ -31,14 +31,16 @@ export async function registerUpload(
 ): Promise<Photo> {
   const data = registerSchema.parse(input);
   await getGallery(db, studioId, galleryId);
-  if (data.sectionId) await assertSectionInGallery(db, galleryId, data.sectionId);
+  // ponytail: photos.sectionId is NOT NULL now; a full sectionId-required API (Zod + callers) lands in a later task.
+  if (!data.sectionId) throw new Error("SECTION_REQUIRED");
+  await assertSectionInGallery(db, galleryId, data.sectionId);
 
   const id = randomUUID();
   const filename = sanitizeFilename(data.filename);
   const [photo] = await db.insert(photos).values({
     id,
     galleryId,
-    sectionId: data.sectionId ?? null,
+    sectionId: data.sectionId,
     filename,
     originalKey: `studios/${studioId}/galleries/${galleryId}/${id}/orig-${filename}`,
     sizeOriginalBytes: data.size,
@@ -113,7 +115,9 @@ export async function movePhotos(
 ): Promise<void> {
   const ids = idList.parse(photoIds);
   await assertPhotosInGallery(db, studioId, galleryId, ids);
-  if (sectionId) await assertSectionInGallery(db, galleryId, sectionId);
+  // ponytail: photos.sectionId is NOT NULL now; guided "no section" UX lands in a later task.
+  if (!sectionId) throw new Error("SECTION_REQUIRED");
+  await assertSectionInGallery(db, galleryId, sectionId);
   await db.update(photos).set({ sectionId })
     .where(and(inArray(photos.id, ids), eq(photos.galleryId, galleryId)));
 }

@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { eq } from "drizzle-orm";
 import { createTestDb, seedStudio } from "../helpers/db";
 import { createGallery } from "@/server/galleries";
 import {
@@ -37,17 +36,14 @@ describe("sections domain", () => {
     expect((await listSections(db, studio.id, gallery.id)).map((s) => s.id)).toEqual([s2.id, s1.id]);
   });
 
-  it("deleting a section moves its photos to 'sin sección'", async () => {
+  it("cannot delete a section that still has photos (FK enforced; guided deletion lands in a later task)", async () => {
     const { db, studio, gallery } = await setup();
     const s = await createSection(db, studio.id, gallery.id, "Temporal");
-    const [photo] = await db.insert(photos)
+    await db.insert(photos)
       .values({ galleryId: gallery.id, sectionId: s.id, filename: "a.jpg", originalKey: "o/a" })
       .returning();
 
-    await deleteSection(db, studio.id, s.id);
-    const [after] = await db.select().from(photos).where(eq(photos.id, photo.id));
-    expect(after).toBeDefined();
-    expect(after.sectionId).toBeNull();
+    await expect(deleteSection(db, studio.id, s.id)).rejects.toThrow();
   });
 
   it("rejects reorders that are not a permutation of the gallery's sections", async () => {

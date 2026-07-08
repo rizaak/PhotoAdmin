@@ -14,8 +14,9 @@ async function fixture() {
   const studio = await seedStudio(db);
   const g = await createGallery(db, studio.id, { title: "Boda" });
   await updateGallerySettings(db, studio.id, g.id, { status: "published" });
+  const section = await createSection(db, studio.id, g.id, "Fotos");
   const mk = async (name: string) => {
-    const p = await registerUpload(db, studio.id, g.id, { filename: name, size: 1, contentType: "image/jpeg", sectionId: null });
+    const p = await registerUpload(db, studio.id, g.id, { filename: name, size: 1, contentType: "image/jpeg", sectionId: section.id });
     return completeProcessing(db, studio.id, p.id, {
       width: 1, height: 1, takenAt: null, thumbKey: "t", webKey: "w", sizeDerivativesBytes: 1, sizeOriginalBytes: 1,
     });

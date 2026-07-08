@@ -13,8 +13,10 @@ async function publishedGallery(db: Awaited<ReturnType<typeof createTestDb>>, st
   return (await getPublicGallery(db, g.slug));
 }
 
-async function readyPhoto(db: Awaited<ReturnType<typeof createTestDb>>, studioId: string, galleryId: string, name = "a.jpg") {
-  const p = await registerUpload(db, studioId, galleryId, { filename: name, size: 10, contentType: "image/jpeg", sectionId: null });
+async function readyPhoto(
+  db: Awaited<ReturnType<typeof createTestDb>>, studioId: string, galleryId: string, sectionId: string, name = "a.jpg",
+) {
+  const p = await registerUpload(db, studioId, galleryId, { filename: name, size: 10, contentType: "image/jpeg", sectionId });
   return completeProcessing(db, studioId, p.id, {
     width: 1, height: 1, takenAt: null, thumbKey: "t", webKey: "w", sizeDerivativesBytes: 1, sizeOriginalBytes: 10,
   });
@@ -62,10 +64,10 @@ describe("client access", () => {
     const hidden = await createSection(db, studio.id, g.id, "Oculta");
     await setSectionVisible(db, studio.id, hidden.id, false);
 
-    const shown = await readyPhoto(db, studio.id, g.id, "shown.jpg");
-    const unpublished = await readyPhoto(db, studio.id, g.id, "hidden.jpg");
+    const shown = await readyPhoto(db, studio.id, g.id, visible.id, "shown.jpg");
+    const unpublished = await readyPhoto(db, studio.id, g.id, visible.id, "hidden.jpg");
     await setPhotosPublished(db, studio.id, g.id, [unpublished.id], false);
-    await registerUpload(db, studio.id, g.id, { filename: "processing.jpg", size: 5, contentType: "image/jpeg", sectionId: null });
+    await registerUpload(db, studio.id, g.id, { filename: "processing.jpg", size: 5, contentType: "image/jpeg", sectionId: visible.id });
 
     const ana = await accessGallery(db, g.slug, { email: "ana@x.com" });
     const beto = await accessGallery(db, g.slug, { email: "beto@x.com" });

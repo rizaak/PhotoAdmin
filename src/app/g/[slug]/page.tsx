@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { photos, sections, type GalleryTemplate } from "@/db/schema";
+import { photos, sections, type CoverStyle, type FontSet, type Palette, type GridStyle } from "@/db/schema";
+import type { GalleryDesign } from "./design-options";
 import { getClientGalleryData, getPublicGallery } from "@/server/client-access";
 import { getOptionalClientSession } from "@/server/client-auth";
 import { presignDownload } from "@/server/storage";
@@ -11,6 +12,13 @@ import {
 } from "@/server/delivery";
 import { AccessForm } from "./access-form";
 import { ClientGallery } from "./client-gallery";
+
+function toDesign(g: { coverStyle: string; fontSet: string; palette: string; gridStyle: string }): GalleryDesign {
+  return {
+    coverStyle: g.coverStyle as CoverStyle, fontSet: g.fontSet as FontSet,
+    palette: g.palette as Palette, gridStyle: g.gridStyle as GridStyle,
+  };
+}
 
 export default async function ClientGalleryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -50,7 +58,7 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
         slug={slug}
         galleryTitle={gallery.title}
         hasPassword={gallery.passwordHash !== null}
-        template={gallery.coverTemplate as GalleryTemplate}
+        design={toDesign(gallery)}
         coverUrl={coverUrl}
         labels={{
           welcome: t("welcome"), emailLabel: t("emailLabel"), nameLabel: t("nameLabel"),
@@ -108,7 +116,7 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
     <ClientGallery
       slug={slug}
       title={data.gallery.title}
-      template={data.gallery.coverTemplate as GalleryTemplate}
+      design={toDesign(data.gallery)}
       coverUrl={coverUrl}
       coverFocalX={data.gallery.coverFocalX}
       coverFocalY={data.gallery.coverFocalY}

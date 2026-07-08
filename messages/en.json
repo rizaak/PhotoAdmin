@@ -52,8 +52,6 @@
     "settings": "Settings",
     "title": "Title",
     "status": "Status",
-    "template": "Template",
-    "templates": { "editorial": "Editorial", "cinematico": "Cinematic dark", "luminoso": "Soft & bright", "clasico": "Classic elegant" },
     "photoOrder": "Photo order",
     "orders": { "capture": "Capture date", "filename": "Filename", "manual": "Manual" },
     "watermarkMode": "Watermark",

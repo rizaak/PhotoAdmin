@@ -91,15 +91,6 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            {t("template")}
-            <select name="coverTemplate" defaultValue={gallery.coverTemplate} className={input}>
-              <option value="editorial">{t("templates.editorial")}</option>
-              <option value="cinematico">{t("templates.cinematico")}</option>
-              <option value="luminoso">{t("templates.luminoso")}</option>
-              <option value="clasico">{t("templates.clasico")}</option>
-            </select>
-          </label>
-          <label className="flex flex-col gap-1">
             {t("photoOrder")}
             <select name="photoOrder" defaultValue={gallery.photoOrder} className={input}>
               <option value="capture">{t("orders.capture")}</option>

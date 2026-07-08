@@ -2,7 +2,10 @@ import { and, desc, eq, ilike } from "drizzle-orm";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import type { Db } from "@/db";
-import { galleries, photos, watermarks, GALLERY_TEMPLATES, type Gallery, type GalleryStatus } from "@/db/schema";
+import {
+  galleries, photos, watermarks, COVER_STYLES, FONT_SETS, PALETTES, GRID_STYLES,
+  type Gallery, type GalleryStatus,
+} from "@/db/schema";
 import { makeSlug } from "./slug";
 
 const createGallerySchema = z.object({
@@ -14,7 +17,6 @@ export type CreateGalleryInput = z.infer<typeof createGallerySchema>;
 const updateGallerySchema = z.object({
   title: z.string().trim().min(1).max(200).optional(),
   status: z.enum(["draft", "published", "archived"]).optional(),
-  coverTemplate: z.enum(GALLERY_TEMPLATES).optional(),
   photoOrder: z.enum(["capture", "filename", "manual"]).optional(),
   downloadEnabled: z.boolean().optional(),
   resWebEnabled: z.boolean().optional(),
@@ -87,8 +89,41 @@ export async function updateGallerySettings(
   });
 }
 
+const designSchema = z.object({
+  coverStyle: z.enum(COVER_STYLES).optional(),
+  fontSet: z.enum(FONT_SETS).optional(),
+  palette: z.enum(PALETTES).optional(),
+  gridStyle: z.enum(GRID_STYLES).optional(),
+  coverFocalX: z.number().min(0).max(1).optional(),
+  coverFocalY: z.number().min(0).max(1).optional(),
+  coverImageKey: z.string().min(1).nullable().optional(),
+});
+export type GalleryDesignInput = z.infer<typeof designSchema>;
+
+export async function updateGalleryDesign(
+  db: Db, studioId: string, galleryId: string, patch: GalleryDesignInput,
+): Promise<{ gallery: Gallery; replacedCoverKey: string | null }> {
+  const data = designSchema.parse(patch);
+  if (data.coverImageKey && !data.coverImageKey.startsWith(`studios/${studioId}/covers/${galleryId}/`)) {
+    throw new Error("INVALID_COVER_KEY");
+  }
+  return db.transaction(async (tx) => {
+    const [current] = await tx.select({ coverImageKey: galleries.coverImageKey }).from(galleries)
+      .where(and(eq(galleries.id, galleryId), eq(galleries.studioId, studioId)));
+    if (!current) throw new Error("NOT_FOUND");
+    const [gallery] = await tx.update(galleries)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(galleries.id, galleryId), eq(galleries.studioId, studioId)))
+      .returning();
+    const replacedCoverKey =
+      data.coverImageKey !== undefined && current.coverImageKey && current.coverImageKey !== data.coverImageKey
+        ? current.coverImageKey : null;
+    return { gallery, replacedCoverKey };
+  });
+}
+
 export async function deleteGallery(db: Db, studioId: string, galleryId: string): Promise<string[]> {
-  await getGallery(db, studioId, galleryId);
+  const gallery = await getGallery(db, studioId, galleryId);
   const rows = await db.select({
     originalKey: photos.originalKey, thumbKey: photos.thumbKey, webKey: photos.webKey,
     highKey: photos.highKey, thumbWmKey: photos.thumbWmKey, webWmKey: photos.webWmKey, highWmKey: photos.highWmKey,
@@ -96,6 +131,7 @@ export async function deleteGallery(db: Db, studioId: string, galleryId: string)
   const keys = rows.flatMap((r) =>
     [r.originalKey, r.thumbKey, r.webKey, r.highKey, r.thumbWmKey, r.webWmKey, r.highWmKey]
       .filter((k): k is string => !!k));
+  if (gallery.coverImageKey) keys.push(gallery.coverImageKey);
 
   const deleted = await db.delete(galleries)
     .where(and(eq(galleries.id, galleryId), eq(galleries.studioId, studioId)))
