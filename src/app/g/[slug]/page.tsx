@@ -83,6 +83,8 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
         sectionId: v.sectionId,
         thumbUrl: await presignDownload(v.thumbKey),
         webUrl: await presignDownload(v.webKey),
+        width: p.width,
+        height: p.height,
         liked: data.likedPhotoIds.includes(p.id),
         comment: data.commentsByPhoto[p.id]?.[0]
           ? { id: data.commentsByPhoto[p.id][0].id, body: data.commentsByPhoto[p.id][0].body }
@@ -106,7 +108,7 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
     <ClientGallery
       slug={slug}
       title={data.gallery.title}
-      theme={data.gallery.theme}
+      template={data.gallery.coverTemplate as GalleryTemplate}
       coverUrl={coverUrl}
       coverFocalX={data.gallery.coverFocalX}
       coverFocalY={data.gallery.coverFocalY}
@@ -121,6 +123,7 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
         resolutions: { web: t("resolutions.web"), high: t("resolutions.high"), original: t("resolutions.original") },
         downloadGallery: t("downloadGallery"), downloadFavorites: t("downloadFavorites"),
         downloadSection: t("downloadSection"), zipError: t("zipError"), zipUnavailable: t("zipUnavailable"),
+        close: t("close"), prev: t("prev"), next: t("next"),
       }}
     />
   );
