@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
+import { photos, sections, type GalleryTemplate } from "@/db/schema";
 import { getClientGalleryData, getPublicGallery } from "@/server/client-access";
 import { getOptionalClientSession } from "@/server/client-auth";
 import { presignDownload } from "@/server/storage";
 import {
-  clientViewPhotos, effectiveWatermarkMode, effectiveDownloadEnabled, enabledResolutions, downloadKey,
+  clientViewPhotos, effectiveWatermarkMode, effectiveDownloadEnabled, enabledResolutions, downloadKey, viewKeys,
 } from "@/server/delivery";
 import { AccessForm } from "./access-form";
 import { ClientGallery } from "./client-gallery";
@@ -24,11 +26,27 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
   if (!session) {
     const gallery = await getPublicGallery(db, slug).catch(() => null);
     if (!gallery) notFound();
+    let coverUrl: string | null = null;
+    if (gallery.coverPhotoId) {
+      const [cover] = await db.select().from(photos)
+        .where(and(eq(photos.id, gallery.coverPhotoId), eq(photos.galleryId, gallery.id)));
+      const [section] = cover?.sectionId
+        ? await db.select().from(sections).where(eq(sections.id, cover.sectionId))
+        : [];
+      if (cover) {
+        const mode = effectiveWatermarkMode(cover, section ?? null,
+          { watermarkMode: gallery.watermarkMode, hasWatermarks: !!gallery.watermarkId });
+        const keys = viewKeys(cover, mode);
+        if (keys) coverUrl = await presignDownload(keys.webKey);
+      }
+    }
     return (
       <AccessForm
         slug={slug}
         galleryTitle={gallery.title}
         hasPassword={gallery.passwordHash !== null}
+        template={gallery.coverTemplate as GalleryTemplate}
+        coverUrl={coverUrl}
         labels={{
           welcome: t("welcome"), emailLabel: t("emailLabel"), nameLabel: t("nameLabel"),
           passwordLabel: t("passwordLabel"), enter: t("enter"),
