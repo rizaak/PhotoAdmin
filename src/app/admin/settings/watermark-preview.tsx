@@ -12,9 +12,14 @@ export function WatermarkPreview({
   const [url, setUrl] = useState<string | null>(null);
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortController = useRef<AbortController | null>(null);
+  const urlRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
+    abortController.current = new AbortController();
+    const controller = abortController.current;
+
     timer.current = setTimeout(() => {
       void (async () => {
         setState("loading");
@@ -32,21 +37,33 @@ export function WatermarkPreview({
                 placement: s.placement,
               })),
             }),
+            signal: controller.signal,
           });
           if (!res.ok) throw new Error();
           const blob = await res.blob();
           setUrl((prev) => {
             if (prev) URL.revokeObjectURL(prev);
-            return URL.createObjectURL(blob);
+            const newUrl = URL.createObjectURL(blob);
+            urlRef.current = newUrl;
+            return newUrl;
           });
           setState("idle");
-        } catch {
+        } catch (err) {
+          if (err instanceof Error && err.name === "AbortError") {
+            return;
+          }
           setState("error");
         }
       })();
     }, 500);
     return () => {
       if (timer.current) clearTimeout(timer.current);
+      if (abortController.current) {
+        abortController.current.abort();
+      }
+      if (urlRef.current) {
+        URL.revokeObjectURL(urlRef.current);
+      }
     };
   }, [slots]);
 
