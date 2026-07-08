@@ -35,6 +35,8 @@ En producción, agregar el dominio de la app a `AllowedOrigins`.
 ## Acceso de clientes
 
 - Galerías publicadas se comparten en `/g/<slug>`; el cliente deja su email (y contraseña si la galería tiene).
+- **Plantillas por galería**: Editorial, Cinemático oscuro, Luminoso tierno y Clásico elegante —
+  se eligen en el detalle de la galería y visten portada, grid, acceso y lightbox del cliente.
 - `CLIENT_SESSION_SECRET` (obligatoria): `openssl rand -hex 32`.
 - `RESEND_API_KEY` + `RESEND_FROM` (opcionales): emails de actividad al fotógrafo; sin key no se envía nada.
 - Marca de agua: las variantes se generan en la Fase 4 — hasta entonces la vista cliente sirve la versión web limpia.
