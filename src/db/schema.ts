@@ -45,6 +45,8 @@ export const galleries = pgTable("galleries", {
   resHighEnabled: boolean("res_high_enabled").notNull().default(false),
   resOriginalEnabled: boolean("res_original_enabled").notNull().default(false),
   watermarkMode: watermarkModeEnum("watermark_mode").notNull().default("none"),
+  // marca del estudio seleccionada para esta galería (null = sin marca)
+  watermarkId: uuid("watermark_id").references((): AnyPgColumn => watermarks.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });

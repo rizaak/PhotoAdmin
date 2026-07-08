@@ -25,12 +25,12 @@ export async function listWatermarks(db: Db, studioId: string): Promise<Watermar
     .orderBy(asc(watermarks.slot));
 }
 
-async function clearStudioWatermarkKeys(db: Db, studioId: string): Promise<void> {
+async function clearWatermarkKeysFor(db: Db, watermarkId: string): Promise<void> {
   await db.update(photos)
     .set({ thumbWmKey: null, webWmKey: null, highWmKey: null })
     .where(inArray(
       photos.galleryId,
-      db.select({ id: galleries.id }).from(galleries).where(eq(galleries.studioId, studioId)),
+      db.select({ id: galleries.id }).from(galleries).where(eq(galleries.watermarkId, watermarkId)),
     ));
 }
 
@@ -57,7 +57,7 @@ export async function saveWatermark(
     const [watermark] = await tx.insert(watermarks).values(values)
       .onConflictDoUpdate({ target: [watermarks.studioId, watermarks.slot], set: values })
       .returning();
-    await clearStudioWatermarkKeys(tx, studioId);
+    if (existing) await clearWatermarkKeysFor(tx, existing.id);
     const replacedImageKey =
       existing?.imageKey && existing.imageKey !== watermark.imageKey ? existing.imageKey : null;
     return { watermark, replacedImageKey };
@@ -69,11 +69,13 @@ export async function deleteWatermark(
 ): Promise<{ removedImageKey: string | null }> {
   const parsedSlot = z.number().int().min(0).max(2).parse(slot);
   return db.transaction(async (tx) => {
-    const deleted = await tx.delete(watermarks)
-      .where(and(eq(watermarks.studioId, studioId), eq(watermarks.slot, parsedSlot)))
-      .returning();
-    if (deleted.length === 0) throw new Error("NOT_FOUND");
-    await clearStudioWatermarkKeys(tx, studioId);
-    return { removedImageKey: deleted[0].imageKey };
+    const [row] = await tx.select().from(watermarks)
+      .where(and(eq(watermarks.studioId, studioId), eq(watermarks.slot, parsedSlot)));
+    if (!row) throw new Error("NOT_FOUND");
+    await clearWatermarkKeysFor(tx, row.id);
+    await tx.update(galleries).set({ watermarkId: null }).where(eq(galleries.watermarkId, row.id));
+    await tx.delete(watermarks)
+      .where(and(eq(watermarks.studioId, studioId), eq(watermarks.slot, parsedSlot)));
+    return { removedImageKey: row.imageKey };
   });
 }

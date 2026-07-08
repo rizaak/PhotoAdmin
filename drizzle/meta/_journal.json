@@ -43,6 +43,13 @@
       "when": 1783492130104,
       "tag": "0005_last_network",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783500268563,
+      "tag": "0006_gallery_watermark_selection",
+      "breakpoints": true
     }
   ]
 }
