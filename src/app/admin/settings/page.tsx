@@ -2,7 +2,8 @@ import { getTranslations } from "next-intl/server";
 import { db } from "@/db";
 import { requireStudio } from "@/server/auth";
 import { listWatermarks } from "@/server/watermarks";
-import { WatermarkEditor, type SlotState } from "./watermark-editor";
+import type { SlotState } from "./watermark-editor";
+import { WatermarkSection } from "./watermark-section";
 
 export default async function SettingsPage() {
   const studio = await requireStudio();
@@ -26,7 +27,7 @@ export default async function SettingsPage() {
       <h1 className="text-2xl font-semibold">{t("title")}</h1>
       <section>
         <h2 className="mb-4 font-medium">{tw("title")}</h2>
-        <WatermarkEditor
+        <WatermarkSection
           initial={initial}
           labels={{
             intro: tw("intro"), regenNote: tw("regenNote"), add: tw("add"),
@@ -37,6 +38,7 @@ export default async function SettingsPage() {
             save: tw("save"), delete: tw("delete"), saved: tw("saved"),
             incomplete: tw("incomplete"), error: tw("error"),
           }}
+          previewLabels={{ preview: tw("preview"), previewLoading: tw("previewLoading"), previewError: tw("previewError") }}
         />
       </section>
     </div>
