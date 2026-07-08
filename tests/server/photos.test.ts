@@ -58,6 +58,18 @@ describe("photos domain", () => {
     const p2 = await registerUpload(db, studio.id, gallery.id, upload("b.jpg"));
     await markPhotoError(db, studio.id, p2.id);
     expect((await getOwnedPhoto(db, studio.id, p2.id)).status).toBe("error");
+
+    const p3 = await registerUpload(db, studio.id, gallery.id, upload("c.jpg"));
+    const full = await completeProcessing(db, studio.id, p3.id, {
+      width: 1, height: 1, takenAt: null, thumbKey: "t", webKey: "w",
+      highKey: "h", thumbWmKey: "twm", webWmKey: "wwm", highWmKey: "hwm",
+      sizeDerivativesBytes: 9, sizeOriginalBytes: 1000,
+    });
+    expect(full.highKey).toBe("h");
+    expect(full.thumbWmKey).toBe("twm");
+    expect(full.webWmKey).toBe("wwm");
+    expect(full.highWmKey).toBe("hwm");
+    expect(done.highKey).toBeNull(); // el caso previo, sin los campos nuevos
   });
 
   it("lists photos ordered by gallery photoOrder", async () => {

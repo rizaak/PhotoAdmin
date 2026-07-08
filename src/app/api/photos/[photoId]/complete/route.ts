@@ -2,9 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
 import { requireStudio } from "@/server/auth";
-import { getOwnedPhoto, completeProcessing, markPhotoError, MAX_UPLOAD_BYTES } from "@/server/photos";
-import { getObjectBuffer, putObjectBuffer } from "@/server/storage";
-import { processImage } from "@/server/images";
+import { getOwnedPhoto, markPhotoError } from "@/server/photos";
 
 export const maxDuration = 60; // fotos grandes: descargar + sharp + subir
 
@@ -33,25 +31,8 @@ export async function POST(
   if (photo.status === "ready") return NextResponse.json({ status: "ready" });
 
   try {
-    const original = await getObjectBuffer(photo.originalKey);
-    if (original.length > MAX_UPLOAD_BYTES) throw new Error("FILE_TOO_LARGE");
-    const processed = await processImage(original);
-    const dir = photo.originalKey.split("/").slice(0, -1).join("/");
-    const thumbKey = `${dir}/thumb.jpg`;
-    const webKey = `${dir}/web.jpg`;
-    await Promise.all([
-      putObjectBuffer(thumbKey, processed.thumb, "image/jpeg"),
-      putObjectBuffer(webKey, processed.web, "image/jpeg"),
-    ]);
-    await completeProcessing(db, studioId, photoId, {
-      width: processed.width,
-      height: processed.height,
-      takenAt: processed.takenAt,
-      thumbKey,
-      webKey,
-      sizeDerivativesBytes: processed.thumb.length + processed.web.length,
-      sizeOriginalBytes: original.length,
-    });
+    const { processPhoto } = await import("@/server/processing");
+    await processPhoto(db, studioId, photoId);
     return NextResponse.json({ status: "ready" });
   } catch (e) {
     console.error("photo processing failed", photoId, e);

@@ -58,7 +58,9 @@ export async function getOwnedPhoto(db: Db, studioId: string, photoId: string): 
 export async function completeProcessing(
   db: Db, studioId: string, photoId: string,
   result: {
-    width: number; height: number; takenAt: Date | null; thumbKey: string; webKey: string;
+    width: number; height: number; takenAt: Date | null;
+    thumbKey: string; webKey: string;
+    highKey?: string | null; thumbWmKey?: string | null; webWmKey?: string | null; highWmKey?: string | null;
     sizeDerivativesBytes: number; sizeOriginalBytes: number;
   },
 ): Promise<Photo> {
@@ -70,6 +72,10 @@ export async function completeProcessing(
     takenAt: result.takenAt,
     thumbKey: result.thumbKey,
     webKey: result.webKey,
+    highKey: result.highKey ?? null,
+    thumbWmKey: result.thumbWmKey ?? null,
+    webWmKey: result.webWmKey ?? null,
+    highWmKey: result.highWmKey ?? null,
     sizeDerivativesBytes: result.sizeDerivativesBytes,
     sizeOriginalBytes: result.sizeOriginalBytes,
   }).where(eq(photos.id, photoId)).returning();
