@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveWatermarkAction, deleteWatermarkAction } from "./actions";
 import type { Placement } from "@/server/watermarks";
@@ -42,12 +42,13 @@ export function WatermarkEditor({
   const [status, setStatus] = useState<Record<number, string>>({});
   const router = useRouter();
 
+  // setState updaters deben ser puros: el padre se notifica tras el render
+  useEffect(() => {
+    onChange?.(slots);
+  }, [onChange, slots]);
+
   function update(slot: number, patch: Partial<SlotState>) {
-    setSlots((prev) => {
-      const next = prev.map((s) => (s.slot === slot ? { ...s, ...patch, saved: false } : s));
-      onChange?.(next);
-      return next;
-    });
+    setSlots((prev) => prev.map((s) => (s.slot === slot ? { ...s, ...patch, saved: false } : s)));
   }
 
   async function uploadPng(slot: number, file: File) {
@@ -110,11 +111,7 @@ export function WatermarkEditor({
       if (target?.saved !== false || initial.some((s) => s.slot === slot)) {
         await deleteWatermarkAction({ slot });
       }
-      setSlots((prev) => {
-        const next = prev.filter((s) => s.slot !== slot);
-        onChange?.(next);
-        return next;
-      });
+      setSlots((prev) => prev.filter((s) => s.slot !== slot));
       router.refresh();
     } catch {
       setStatus((p) => ({ ...p, [slot]: labels.error }));
@@ -127,11 +124,7 @@ export function WatermarkEditor({
     const used = new Set(slots.map((s) => s.slot));
     const free = [0, 1, 2].find((n) => !used.has(n));
     if (free === undefined) return;
-    setSlots((prev) => {
-      const next = [...prev, newSlot(free)].sort((a, b) => a.slot - b.slot);
-      onChange?.(next);
-      return next;
-    });
+    setSlots((prev) => [...prev, newSlot(free)].sort((a, b) => a.slot - b.slot));
   }
 
   return (
