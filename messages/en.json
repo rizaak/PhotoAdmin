@@ -129,6 +129,8 @@
     "send": "Save",
     "empty": "This gallery has no photos yet.",
     "yourActivity": "Only you and the photographer can see your likes and comments.",
-    "actionError": "Could not save. Reload the page and try again."
+    "actionError": "Could not save. Reload the page and try again.",
+    "download": "Download",
+    "resolutions": { "web": "Web", "high": "High resolution", "original": "Original" }
   }
 }

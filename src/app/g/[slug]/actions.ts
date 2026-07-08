@@ -3,16 +3,20 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { studios, clients, photos } from "@/db/schema";
+import { studios, clients, photos, sections, activityEvents } from "@/db/schema";
 import { accessGallery } from "@/server/client-access";
 import { signClientSession, clientCookieOptions, CLIENT_COOKIE } from "@/server/client-session";
 import { checkRateLimit, isRateLimited } from "@/server/rate-limit";
 import { notifyPhotographer, firstAccessEmail, commentEmail } from "@/server/emails";
 import { requireClientSession } from "@/server/client-auth";
 import { toggleLike, addComment } from "@/server/engagement";
+import {
+  effectiveWatermarkMode, effectiveDownloadEnabled, enabledResolutions, downloadKey,
+} from "@/server/delivery";
+import { presignDownload } from "@/server/storage";
 
 export type EnterState = { error: "invalidPassword" | "tooManyAttempts" | "genericError" } | null;
 
@@ -92,4 +96,44 @@ export async function addCommentAction(input: { slug: string; photoId: string; b
   }
 
   return { id: comment.id, body: comment.body };
+}
+
+const downloadInput = z.object({
+  slug: z.string().min(1),
+  photoId: z.string().uuid(),
+  resolution: z.enum(["web", "high", "original"]),
+});
+
+export async function downloadPhotoAction(
+  input: { slug: string; photoId: string; resolution: "web" | "high" | "original" },
+): Promise<{ url: string }> {
+  const data = downloadInput.parse(input);
+  const { gallery, clientId } = await requireClientSession(data.slug);
+
+  const [photo] = await db.select().from(photos)
+    .where(and(eq(photos.id, data.photoId), eq(photos.galleryId, gallery.id)));
+  if (!photo || !photo.published || photo.status !== "ready") throw new Error("NOT_FOUND");
+
+  let section = null;
+  if (photo.sectionId) {
+    [section] = await db.select().from(sections).where(eq(sections.id, photo.sectionId));
+    if (!section || !section.visible) throw new Error("NOT_FOUND");
+  }
+  if (!effectiveDownloadEnabled(section, gallery)) throw new Error("NOT_AVAILABLE");
+  if (!enabledResolutions(gallery).includes(data.resolution)) throw new Error("NOT_AVAILABLE");
+
+  const mode = effectiveWatermarkMode(photo, section, gallery);
+  const key = downloadKey(photo, mode, data.resolution);
+  if (!key) throw new Error("NOT_AVAILABLE");
+
+  const stem = photo.filename.replace(/\.[^.]+$/, "");
+  const filename = data.resolution === "original" ? photo.filename
+    : data.resolution === "web" ? `${stem}-web.jpg` : `${stem}-alta.jpg`;
+  const url = await presignDownload(key, 900, filename);
+
+  await db.insert(activityEvents).values({
+    galleryId: gallery.id, clientId, photoId: photo.id, type: "download_photo",
+    metadata: { resolution: data.resolution },
+  });
+  return { url };
 }

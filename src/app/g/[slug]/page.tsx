@@ -4,7 +4,9 @@ import { db } from "@/db";
 import { getClientGalleryData, getPublicGallery } from "@/server/client-access";
 import { getOptionalClientSession } from "@/server/client-auth";
 import { presignDownload } from "@/server/storage";
-import { clientViewPhotos } from "@/server/delivery";
+import {
+  clientViewPhotos, effectiveWatermarkMode, effectiveDownloadEnabled, enabledResolutions, downloadKey,
+} from "@/server/delivery";
 import { AccessForm } from "./access-form";
 import { ClientGallery } from "./client-gallery";
 
@@ -40,9 +42,16 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
   const data = await getClientGalleryData(db, session.gallery.id, session.clientId);
   const viewList = clientViewPhotos(data.photos, data.sections, data.gallery);
   const byId = new Map(data.photos.map((p) => [p.id, p]));
+  const sectionById = new Map(data.sections.map((s) => [s.id, s]));
+  const resolutions = enabledResolutions(data.gallery);
   const photoViews = await Promise.all(
     viewList.map(async (v) => {
       const p = byId.get(v.id)!;
+      const section = p.sectionId ? sectionById.get(p.sectionId) ?? null : null;
+      const mode = effectiveWatermarkMode(p, section, data.gallery);
+      const downloads = effectiveDownloadEnabled(section, data.gallery)
+        ? resolutions.filter((r) => downloadKey(p, mode, r) !== null)
+        : [];
       return {
         id: p.id,
         filename: p.filename,
@@ -53,9 +62,11 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
         comment: data.commentsByPhoto[p.id]?.[0]
           ? { id: data.commentsByPhoto[p.id][0].id, body: data.commentsByPhoto[p.id][0].body }
           : null,
+        downloads,
       };
     }),
   );
+  const zipEnabled = photoViews.some((p) => p.downloads.length > 0);
   const cover = viewList.find((v) => v.id === data.gallery.coverPhotoId);
   const coverUrl = cover ? await presignDownload(cover.webKey) : null;
   const sectionBlocks: { id: string | null; name: string | null }[] = [
@@ -77,6 +88,8 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
         like: t("like"), unlike: t("unlike"), comments: t("comments"),
         commentPlaceholder: t("commentPlaceholder"), send: t("send"),
         empty: t("empty"), yourActivity: t("yourActivity"), actionError: t("actionError"),
+        download: t("download"),
+        resolutions: { web: t("resolutions.web"), high: t("resolutions.high"), original: t("resolutions.original") },
       }}
     />
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { toggleLikeAction, addCommentAction } from "./actions";
+import { toggleLikeAction, addCommentAction, downloadPhotoAction } from "./actions";
 
 export type ClientPhoto = {
   id: string;
@@ -11,11 +11,13 @@ export type ClientPhoto = {
   webUrl: string;
   liked: boolean;
   comment: { id: string; body: string } | null;
+  downloads: ("web" | "high" | "original")[];
 };
 
 type Labels = {
   like: string; unlike: string; comments: string; commentPlaceholder: string;
   send: string; empty: string; yourActivity: string; actionError: string;
+  download: string; resolutions: { web: string; high: string; original: string };
 };
 
 export function ClientGallery({
@@ -31,6 +33,7 @@ export function ClientGallery({
   const [openPhoto, setOpenPhoto] = useState<ClientPhoto | null>(null);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
+  const [resolution, setResolution] = useState<"web" | "high" | "original">("web");
 
   const dark = theme === "dark";
   const bg = dark ? "bg-neutral-950 text-neutral-100" : "bg-white text-neutral-900";
@@ -48,6 +51,16 @@ export function ClientGallery({
   function openLightbox(photo: ClientPhoto) {
     setOpenPhoto(photo);
     setDraft(photo.comment?.body ?? "");
+    setResolution(photo.downloads[0] ?? "web");
+  }
+
+  async function onDownload(photo: ClientPhoto) {
+    try {
+      const { url } = await downloadPhotoAction({ slug, photoId: photo.id, resolution });
+      window.location.assign(url);
+    } catch {
+      alert(labels.actionError);
+    }
   }
 
   async function onComment(photo: ClientPhoto) {
@@ -138,6 +151,23 @@ export function ClientGallery({
             >
               ♥ {openPhoto.liked ? labels.unlike : labels.like}
             </button>
+            {openPhoto.downloads.length > 0 && (
+              <div className="flex items-center gap-2">
+                <select value={resolution} onChange={(e) => setResolution(e.target.value as typeof resolution)}
+                  className="rounded border px-2 py-1.5 text-sm">
+                  {openPhoto.downloads.map((r) => (
+                    <option key={r} value={r}>{labels.resolutions[r]}</option>
+                  ))}
+                </select>
+                <button
+                  disabled={busy}
+                  onClick={() => void onDownload(openPhoto)}
+                  className="rounded border px-3 py-1.5 text-sm"
+                >
+                  ⬇ {labels.download}
+                </button>
+              </div>
+            )}
             <h3 className="text-sm font-medium">{labels.comments}</h3>
             <div className="space-y-2">
               <textarea

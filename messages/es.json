@@ -129,6 +129,8 @@
     "send": "Guardar",
     "empty": "Esta galería aún no tiene fotos.",
     "yourActivity": "Solo tú y el fotógrafo ven tus me gusta y comentarios.",
-    "actionError": "No se pudo guardar. Recarga la página e inténtalo de nuevo."
+    "actionError": "No se pudo guardar. Recarga la página e inténtalo de nuevo.",
+    "download": "Descargar",
+    "resolutions": { "web": "Web", "high": "Alta resolución", "original": "Original" }
   }
 }
