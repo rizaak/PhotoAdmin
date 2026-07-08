@@ -28,12 +28,17 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
     if (!gallery) notFound();
     let coverUrl: string | null = null;
     if (gallery.coverPhotoId) {
+      // Mismos gates de visibilidad que getClientGalleryData: published + ready + sección visible
       const [cover] = await db.select().from(photos)
-        .where(and(eq(photos.id, gallery.coverPhotoId), eq(photos.galleryId, gallery.id)));
+        .where(and(
+          eq(photos.id, gallery.coverPhotoId), eq(photos.galleryId, gallery.id),
+          eq(photos.published, true), eq(photos.status, "ready"),
+        ));
       const [section] = cover?.sectionId
-        ? await db.select().from(sections).where(eq(sections.id, cover.sectionId))
+        ? await db.select().from(sections)
+          .where(and(eq(sections.id, cover.sectionId), eq(sections.galleryId, gallery.id)))
         : [];
-      if (cover) {
+      if (cover && (!cover.sectionId || section?.visible)) {
         const mode = effectiveWatermarkMode(cover, section ?? null,
           { watermarkMode: gallery.watermarkMode, hasWatermarks: !!gallery.watermarkId });
         const keys = viewKeys(cover, mode);
