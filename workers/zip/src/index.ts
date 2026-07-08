@@ -146,9 +146,11 @@ export default {
     const manifest = (await manifestObject.json()) as Manifest;
 
     const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
+    const writer = writable.getWriter();
     ctx.waitUntil(
-      streamZip(env, manifest, writable.getWriter()).catch((e) => {
+      streamZip(env, manifest, writer).catch(async (e) => {
         console.error("zip stream failed", e);
+        await writer.abort(e).catch(() => {});
       }),
     );
 
