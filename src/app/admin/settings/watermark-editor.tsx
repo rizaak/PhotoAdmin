@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveWatermarkAction, deleteWatermarkAction } from "./actions";
+import type { Placement } from "@/server/watermarks";
 
 export type SlotState = {
   slot: number;
@@ -90,7 +91,7 @@ export function WatermarkEditor({
         imageKey: state.type === "image" ? state.imageKey : null,
         opacityPct: state.opacityPct,
         sizePct: state.sizePct,
-        placement: state.placement as never,
+        placement: state.placement as Placement,
       });
       update(state.slot, { saved: true });
       setStatus((p) => ({ ...p, [state.slot]: labels.saved }));
@@ -149,11 +150,11 @@ export function WatermarkEditor({
 
           <div className="flex gap-3">
             <label className="flex items-center gap-1.5">
-              <input type="radio" checked={s.type === "text"} onChange={() => update(s.slot, { type: "text" })} />
+              <input type="radio" name={`wm-type-${s.slot}`} checked={s.type === "text"} onChange={() => update(s.slot, { type: "text" })} />
               {labels.typeText}
             </label>
             <label className="flex items-center gap-1.5">
-              <input type="radio" checked={s.type === "image"} onChange={() => update(s.slot, { type: "image" })} />
+              <input type="radio" name={`wm-type-${s.slot}`} checked={s.type === "image"} onChange={() => update(s.slot, { type: "image" })} />
               {labels.typeImage}
             </label>
           </div>
