@@ -119,7 +119,9 @@ describe("photos domain", () => {
     const { db, studio, gallery } = await setup();
     const p = await registerUpload(db, studio.id, gallery.id, upload());
     await completeProcessing(db, studio.id, p.id, {
-      width: 1, height: 1, takenAt: null, thumbKey: "k/thumb.jpg", webKey: "k/web.jpg", sizeDerivativesBytes: 1, sizeOriginalBytes: 1000,
+      width: 1, height: 1, takenAt: null, thumbKey: "k/thumb.jpg", webKey: "k/web.jpg",
+      highKey: "k/high.jpg", thumbWmKey: "k/thumb-wm.jpg", webWmKey: "k/web-wm.jpg", highWmKey: "k/high-wm.jpg",
+      sizeDerivativesBytes: 1, sizeOriginalBytes: 1000,
     });
 
     await setPhotosPublished(db, studio.id, gallery.id, [p.id], false);
@@ -132,6 +134,11 @@ describe("photos domain", () => {
     expect(keys).toContain(p.originalKey);
     expect(keys).toContain("k/thumb.jpg");
     expect(keys).toContain("k/web.jpg");
+    expect(keys).toContain("k/high.jpg");
+    expect(keys).toContain("k/thumb-wm.jpg");
+    expect(keys).toContain("k/web-wm.jpg");
+    expect(keys).toContain("k/high-wm.jpg");
+    expect(keys).toHaveLength(7);
     await expect(getOwnedPhoto(db, studio.id, p.id)).rejects.toThrow("NOT_FOUND");
     // FK set null: la portada se limpia sola
     expect((await getGallery(db, studio.id, gallery.id)).coverPhotoId).toBeNull();

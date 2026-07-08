@@ -81,13 +81,21 @@ describe("galleries domain", () => {
       originalKey: "studios/x/galleries/g/photo/orig-a.jpg",
       thumbKey: "studios/x/galleries/g/photo/thumb.jpg",
       webKey: "studios/x/galleries/g/photo/web.jpg",
+      highKey: "studios/x/galleries/g/photo/high.jpg",
+      thumbWmKey: "studios/x/galleries/g/photo/thumb-wm.jpg",
+      webWmKey: "studios/x/galleries/g/photo/web-wm.jpg",
+      highWmKey: "studios/x/galleries/g/photo/high-wm.jpg",
     });
 
     const keys = await deleteGallery(db, studio.id, g.id);
     expect(keys).toContain("studios/x/galleries/g/photo/orig-a.jpg");
     expect(keys).toContain("studios/x/galleries/g/photo/thumb.jpg");
     expect(keys).toContain("studios/x/galleries/g/photo/web.jpg");
-    expect(keys).toHaveLength(3);
+    expect(keys).toContain("studios/x/galleries/g/photo/high.jpg");
+    expect(keys).toContain("studios/x/galleries/g/photo/thumb-wm.jpg");
+    expect(keys).toContain("studios/x/galleries/g/photo/web-wm.jpg");
+    expect(keys).toContain("studios/x/galleries/g/photo/high-wm.jpg");
+    expect(keys).toHaveLength(7);
     await expect(getGallery(db, studio.id, g.id)).rejects.toThrow("NOT_FOUND");
   });
 });

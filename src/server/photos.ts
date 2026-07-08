@@ -134,8 +134,13 @@ export async function deletePhotos(
   await assertPhotosInGallery(db, studioId, galleryId, ids);
   const rows = await db.delete(photos)
     .where(and(inArray(photos.id, ids), eq(photos.galleryId, galleryId)))
-    .returning({ originalKey: photos.originalKey, thumbKey: photos.thumbKey, webKey: photos.webKey });
-  return rows.flatMap((r) => [r.originalKey, r.thumbKey, r.webKey].filter((k): k is string => !!k));
+    .returning({
+      originalKey: photos.originalKey, thumbKey: photos.thumbKey, webKey: photos.webKey,
+      highKey: photos.highKey, thumbWmKey: photos.thumbWmKey, webWmKey: photos.webWmKey, highWmKey: photos.highWmKey,
+    });
+  return rows.flatMap((r) =>
+    [r.originalKey, r.thumbKey, r.webKey, r.highKey, r.thumbWmKey, r.webWmKey, r.highWmKey]
+      .filter((k): k is string => !!k));
 }
 
 export async function setCoverPhoto(db: Db, studioId: string, galleryId: string, photoId: string): Promise<void> {

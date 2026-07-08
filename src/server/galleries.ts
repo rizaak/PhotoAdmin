@@ -73,8 +73,11 @@ export async function deleteGallery(db: Db, studioId: string, galleryId: string)
   await getGallery(db, studioId, galleryId);
   const rows = await db.select({
     originalKey: photos.originalKey, thumbKey: photos.thumbKey, webKey: photos.webKey,
+    highKey: photos.highKey, thumbWmKey: photos.thumbWmKey, webWmKey: photos.webWmKey, highWmKey: photos.highWmKey,
   }).from(photos).where(eq(photos.galleryId, galleryId));
-  const keys = rows.flatMap((r) => [r.originalKey, r.thumbKey, r.webKey].filter((k): k is string => !!k));
+  const keys = rows.flatMap((r) =>
+    [r.originalKey, r.thumbKey, r.webKey, r.highKey, r.thumbWmKey, r.webWmKey, r.highWmKey]
+      .filter((k): k is string => !!k));
 
   const deleted = await db.delete(galleries)
     .where(and(eq(galleries.id, galleryId), eq(galleries.studioId, studioId)))
