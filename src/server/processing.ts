@@ -12,7 +12,9 @@ export async function processPhoto(db: Db, studioId: string, photoId: string): P
 
   const original = await getObjectBuffer(photo.originalKey);
   if (original.length > MAX_UPLOAD_BYTES) throw new Error("FILE_TOO_LARGE");
-  const set = await makeDerivatives(original, { watermarkText: gallery.watermarkText });
+  // Task 3 conecta las marcas del estudio
+  // ponytail: empty specs array until Task 3 wires studio watermarks
+  const set = await makeDerivatives(original, { watermarks: [] });
 
   const dir = photo.originalKey.split("/").slice(0, -1).join("/");
   const keys = {
