@@ -7,6 +7,7 @@ import { fontVariables } from "./fonts";
 import { GalleryCover } from "./gallery-cover";
 import { GalleryHeader } from "./gallery-header";
 import { PhotoGrid } from "./photo-grid";
+import { Lightbox } from "./lightbox";
 import { IconDownload } from "./icons";
 import {
   toggleLikeAction, addCommentAction, downloadPhotoAction, zipRequestAction,
@@ -50,10 +51,8 @@ export function ClientGallery({
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const [photos, setPhotos] = useState(initialPhotos);
-  const [openPhoto, setOpenPhoto] = useState<ClientPhoto | null>(null);
-  const [draft, setDraft] = useState("");
+  const [openId, setOpenId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [resolution, setResolution] = useState<Res>("web");
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -66,25 +65,14 @@ export function ClientGallery({
     try {
       const { liked } = await toggleLikeAction({ slug, photoId: photo.id });
       setPhotos((prev) => prev.map((p) => (p.id === photo.id ? { ...p, liked } : p)));
-      setOpenPhoto((prev) => (prev && prev.id === photo.id ? { ...prev, liked } : prev));
     } catch {
       setNotice(labels.actionError);
     }
   }
 
-  function openLightbox(photo: ClientPhoto) {
-    setOpenPhoto(photo);
-    setDraft(photo.comment?.body ?? "");
-    setResolution(photo.downloads[0] ?? "web");
-  }
-
-  async function onDownload(photo: ClientPhoto) {
-    try {
-      const { url } = await downloadPhotoAction({ slug, photoId: photo.id, resolution });
-      window.location.assign(url);
-    } catch {
-      setNotice(labels.actionError);
-    }
+  async function onDownload(photo: ClientPhoto, resolution: Res) {
+    const { url } = await downloadPhotoAction({ slug, photoId: photo.id, resolution });
+    window.location.assign(url);
   }
 
   async function onZip(
@@ -101,18 +89,13 @@ export function ClientGallery({
     }
   }
 
-  async function onComment(photo: ClientPhoto) {
-    if (!draft.trim() || busy) return;
+  async function onComment(photo: ClientPhoto, body: string) {
+    if (!body.trim() || busy) return;
     setBusy(true);
     try {
-      const c = await addCommentAction({ slug, photoId: photo.id, body: draft });
-      const update = (p: ClientPhoto) =>
-        p.id === photo.id ? { ...p, comment: { id: c.id, body: c.body } } : p;
-      setPhotos((prev) => prev.map(update));
-      setOpenPhoto((prev) => (prev ? update(prev) : prev));
-      setDraft(c.body);
-    } catch {
-      setNotice(labels.actionError);
+      const c = await addCommentAction({ slug, photoId: photo.id, body });
+      setPhotos((prev) => prev.map((p) =>
+        p.id === photo.id ? { ...p, comment: { id: c.id, body: c.body } } : p));
     } finally {
       setBusy(false);
     }
@@ -121,6 +104,7 @@ export function ClientGallery({
   const bySection = sections
     .map((s) => ({ ...s, photos: photos.filter((p) => p.sectionId === s.id) }))
     .filter((s) => s.photos.length > 0);
+  const flatPhotos = bySection.flatMap((s) => s.photos);
 
   return (
     <main className={fontVariables} style={{ background: tk.bg, color: tk.text, fontFamily: tk.body }}>
@@ -162,7 +146,7 @@ export function ClientGallery({
               </h2>
             )}
             <PhotoGrid
-              template={template} photos={s.photos} onOpen={openLightbox}
+              template={template} photos={s.photos} onOpen={(p) => setOpenId(p.id)}
               onToggleLike={(p) => void onToggleLike(p)}
               likeLabel={labels.like} unlikeLabel={labels.unlike}
             />
@@ -179,56 +163,11 @@ export function ClientGallery({
         </div>
       )}
 
-      {openPhoto && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-black/90 md:flex-row" onClick={() => setOpenPhoto(null)}>
-          <div className="flex flex-1 items-center justify-center p-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={openPhoto.webUrl} alt={openPhoto.filename}
-              className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
-          </div>
-          <aside
-            className="w-full space-y-3 bg-white p-4 text-neutral-900 md:h-full md:w-80 md:overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => void onToggleLike(openPhoto)}
-              className={`rounded px-3 py-1.5 text-sm ${openPhoto.liked ? "bg-red-500 text-white" : "border"}`}
-            >
-              ♥ {openPhoto.liked ? labels.unlike : labels.like}
-            </button>
-            {openPhoto.downloads.length > 0 && (
-              <div className="flex items-center gap-2">
-                <select value={resolution} onChange={(e) => setResolution(e.target.value as Res)}
-                  className="rounded border px-2 py-1.5 text-sm">
-                  {openPhoto.downloads.map((r) => (
-                    <option key={r} value={r}>{labels.resolutions[r]}</option>
-                  ))}
-                </select>
-                <button
-                  disabled={busy}
-                  onClick={() => void onDownload(openPhoto)}
-                  className="rounded border px-3 py-1.5 text-sm"
-                >
-                  ⬇ {labels.download}
-                </button>
-              </div>
-            )}
-            <h3 className="text-sm font-medium">{labels.comments}</h3>
-            <div className="space-y-2">
-              <textarea
-                value={draft} onChange={(e) => setDraft(e.target.value)}
-                placeholder={labels.commentPlaceholder}
-                rows={3}
-                className="w-full resize-none rounded border px-2 py-1.5 text-sm"
-              />
-              <button disabled={busy} onClick={() => void onComment(openPhoto)}
-                className="rounded bg-neutral-900 px-3 py-1.5 text-sm text-white disabled:opacity-50">
-                {labels.send}
-              </button>
-            </div>
-          </aside>
-        </div>
-      )}
+      <Lightbox
+        photos={flatPhotos} openId={openId} busy={busy} labels={labels}
+        onClose={() => setOpenId(null)} onNavigate={setOpenId}
+        onToggleLike={onToggleLike} onDownload={onDownload} onComment={onComment}
+      />
     </main>
   );
 }
