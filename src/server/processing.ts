@@ -2,8 +2,9 @@ import { eq } from "drizzle-orm";
 import type { Db } from "@/db";
 import { galleries } from "@/db/schema";
 import { getOwnedPhoto, completeProcessing, MAX_UPLOAD_BYTES } from "./photos";
-import { makeDerivatives } from "./images";
+import { makeDerivatives, type WatermarkSpec } from "./images";
 import { getObjectBuffer, putObjectBuffer, deleteObjects } from "./storage";
+import { listWatermarks } from "./watermarks";
 
 export async function processPhoto(db: Db, studioId: string, photoId: string): Promise<"ready"> {
   const photo = await getOwnedPhoto(db, studioId, photoId);
@@ -12,9 +13,23 @@ export async function processPhoto(db: Db, studioId: string, photoId: string): P
 
   const original = await getObjectBuffer(photo.originalKey);
   if (original.length > MAX_UPLOAD_BYTES) throw new Error("FILE_TOO_LARGE");
-  // Task 3 conecta las marcas del estudio
-  // ponytail: empty specs array until Task 3 wires studio watermarks
-  const set = await makeDerivatives(original, { watermarks: [] });
+
+  const marks = await listWatermarks(db, gallery.studioId);
+  const logoCache = new Map<string, Buffer>();
+  const specs: WatermarkSpec[] = [];
+  for (const mark of marks) {
+    let imageBuffer: Buffer | null = null;
+    if (mark.type === "image" && mark.imageKey) {
+      if (!logoCache.has(mark.imageKey)) logoCache.set(mark.imageKey, await getObjectBuffer(mark.imageKey));
+      imageBuffer = logoCache.get(mark.imageKey)!;
+    }
+    specs.push({
+      type: mark.type, text: mark.text, imageBuffer,
+      opacityPct: mark.opacityPct, sizePct: mark.sizePct,
+      placement: mark.placement,
+    });
+  }
+  const set = await makeDerivatives(original, { watermarks: specs });
 
   const dir = photo.originalKey.split("/").slice(0, -1).join("/");
   const keys = {

@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
 import { createTestDb, seedStudio } from "../helpers/db";
 import {
   createGallery, listGalleries, getGallery, updateGallerySettings, deleteGallery,
@@ -98,34 +97,5 @@ describe("galleries domain", () => {
     expect(keys).toContain("studios/x/galleries/g/photo/high-wm.jpg");
     expect(keys).toHaveLength(7);
     await expect(getGallery(db, studio.id, g.id)).rejects.toThrow("NOT_FOUND");
-  });
-
-  it("clears watermark variant keys when the watermark text changes", async () => {
-    const db = await createTestDb();
-    const studio = await seedStudio(db);
-    const g = await createGallery(db, studio.id, { title: "Boda" });
-    await updateGallerySettings(db, studio.id, g.id, { watermarkText: "© A" });
-    const [p] = await db.insert(photos).values({
-      galleryId: g.id, filename: "a.jpg", originalKey: "k/orig-a.jpg",
-      thumbWmKey: "k/thumb-wm.jpg", webWmKey: "k/web-wm.jpg", highWmKey: "k/high-wm.jpg",
-    }).returning();
-
-    // cambio de texto A→B: limpia claves wm
-    await updateGallerySettings(db, studio.id, g.id, { watermarkText: "© B" });
-    let [after] = await db.select().from(photos).where(eq(photos.id, p.id));
-    expect(after.webWmKey).toBeNull();
-    expect(after.thumbWmKey).toBeNull();
-    expect(after.highWmKey).toBeNull();
-
-    // restaurar claves y guardar el MISMO texto: no toca nada
-    await db.update(photos).set({ webWmKey: "k/web-wm.jpg" }).where(eq(photos.id, p.id));
-    await updateGallerySettings(db, studio.id, g.id, { watermarkText: "© B" });
-    [after] = await db.select().from(photos).where(eq(photos.id, p.id));
-    expect(after.webWmKey).toBe("k/web-wm.jpg");
-
-    // texto → null: NO limpia aquí (la heurística !!webWmKey ya detecta ese caso)
-    await updateGallerySettings(db, studio.id, g.id, { watermarkText: null });
-    [after] = await db.select().from(photos).where(eq(photos.id, p.id));
-    expect(after.webWmKey).toBe("k/web-wm.jpg");
   });
 });

@@ -7,6 +7,7 @@ import { getGallery } from "@/server/galleries";
 import { listSections } from "@/server/sections";
 import { listGalleryPhotos } from "@/server/photos";
 import { presignDownload } from "@/server/storage";
+import { listWatermarks } from "@/server/watermarks";
 import {
   updateGalleryAction, addSectionAction, renameSectionAction,
   toggleSectionAction, moveSectionAction, deleteSectionAction, setSectionOverridesAction,
@@ -41,10 +42,11 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
   );
   const tp = await getTranslations("galleryDetail.photos");
   const tu = await getTranslations("galleryDetail.upload");
+  const hasWatermarks = (await listWatermarks(db, studio.id)).length > 0;
   const pendingReprocess = photoRows
     .filter((p) =>
       p.status === "error" ||
-      (p.status === "ready" && (gallery.watermarkText ? !p.webWmKey : !!p.webWmKey)) ||
+      (p.status === "ready" && (hasWatermarks ? !p.webWmKey : !!p.webWmKey)) ||
       (p.status === "ready" && !p.highKey),
     )
     .map((p) => p.id);
