@@ -28,8 +28,9 @@ export function Lightbox({
   const [panel, setPanel] = useState<"none" | "comment" | "download">("none");
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [prevId, setPrevId] = useState<string | null>(null);
+  const [prevOpenId, setPrevOpenId] = useState<string | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touch = useRef<{ x: number; y: number } | null>(null);
 
   const poke = useCallback(() => {
@@ -38,22 +39,28 @@ export function Lightbox({
     hideTimer.current = setTimeout(() => setControls(false), 2500);
   }, []);
 
-  // Reset per-photo UI state on navigation. Done during render (React's
-  // documented "adjust state on prop change" pattern, using state rather
-  // than a ref) so the reset itself isn't a synchronous setState-in-effect.
-  if (photo && photo.id !== prevId) {
-    setPrevId(photo.id);
-    setControls(true);
-    setPanel("none");
-    setDraft(photo.comment?.body ?? "");
-    setError(null);
+  // Reset per-photo UI state on every openId transition (navigation AND
+  // close→reopen, even of the same photo — the component never unmounts).
+  // Done during render (React's documented "adjust state on prop change"
+  // pattern) so the reset isn't a synchronous setState-in-effect.
+  if (openId !== prevOpenId) {
+    setPrevOpenId(openId);
+    if (photo) {
+      setControls(true);
+      setPanel("none");
+      setDraft(photo.comment?.body ?? "");
+      setError(null);
+    }
   }
 
   useEffect(() => {
     if (!photo) return;
     if (hideTimer.current) clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => setControls(false), 2500);
-    return () => { if (hideTimer.current) clearTimeout(hideTimer.current); };
+    return () => {
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+      if (errorTimer.current) clearTimeout(errorTimer.current);
+    };
   }, [photo?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const go = useCallback((dir: 1 | -1) => {
@@ -65,16 +72,27 @@ export function Lightbox({
   useEffect(() => {
     if (!photo) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        if (panel !== "none") setPanel("none");
+        else onClose();
+        return;
+      }
+      // Don't hijack arrow keys while typing in the comment textarea.
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "TEXTAREA" || tag === "INPUT") return;
       if (e.key === "ArrowRight") go(1);
       if (e.key === "ArrowLeft") go(-1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [photo, go, onClose]);
+  }, [photo, panel, go, onClose]);
 
   if (!photo) return null;
-  const fail = (msg: string) => { setError(msg); setTimeout(() => setError(null), 3500); };
+  const fail = (msg: string) => {
+    setError(msg);
+    if (errorTimer.current) clearTimeout(errorTimer.current);
+    errorTimer.current = setTimeout(() => setError(null), 3500);
+  };
   const pill = "flex items-center justify-center rounded-full bg-neutral-900/55 p-3 text-white backdrop-blur-md";
 
   return (
@@ -121,7 +139,7 @@ export function Lightbox({
               <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 gap-3">
                 <button aria-label={photo.liked ? labels.unlike : labels.like} className={pill}
                   onClick={() => onToggleLike(photo)}>
-                  <IconHeart filled={photo.liked} className={`h-4.5 w-4.5 h-[18px] w-[18px] ${photo.liked ? "text-red-400" : ""}`} />
+                  <IconHeart filled={photo.liked} className={`h-[18px] w-[18px] ${photo.liked ? "text-red-400" : ""}`} />
                 </button>
                 <button aria-label={labels.comments} className={pill}
                   onClick={() => setPanel(panel === "comment" ? "none" : "comment")}>
