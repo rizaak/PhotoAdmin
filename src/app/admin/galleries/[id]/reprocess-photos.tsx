@@ -16,10 +16,15 @@ export function ReprocessPhotos({
   const [failed, setFailed] = useState(0);
   const router = useRouter();
 
+  const running = state === "running";
+
   if (photoIds.length === 0) return null;
 
   async function run() {
+    if (state !== "idle" && state !== "done") return;
     setState("running");
+    setDone(0);
+    setFailed(0);
     let ok = 0;
     let bad = 0;
     for (const id of photoIds) {
@@ -37,7 +42,11 @@ export function ReprocessPhotos({
       {state === "idle" && (
         <div className="flex items-center justify-between gap-3">
           <span>{labels.pending.replace("{count}", String(photoIds.length))}</span>
-          <button onClick={() => void run()} className="rounded bg-neutral-900 px-3 py-1.5 text-white">
+          <button
+            onClick={() => void run()}
+            disabled={running}
+            className="rounded bg-neutral-900 px-3 py-1.5 text-white"
+          >
             {labels.run}
           </button>
         </div>
@@ -51,7 +60,14 @@ export function ReprocessPhotos({
         </div>
       )}
       {state === "done" && (
-        <p>{failed > 0 ? labels.failed.replace("{count}", String(failed)) : labels.done}</p>
+        <div className="flex items-center justify-between gap-3">
+          <p>{failed > 0 ? labels.failed.replace("{count}", String(failed)) : labels.done}</p>
+          {failed > 0 && (
+            <button onClick={() => void run()} className="rounded bg-neutral-900 px-3 py-1.5 text-white">
+              {labels.run}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
