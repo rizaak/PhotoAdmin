@@ -1,6 +1,36 @@
 {
   "adminLayout": {
+    "settings": "Configuración",
     "logout": "Salir"
+  },
+  "settings": {
+    "title": "Configuración",
+    "watermarks": {
+      "title": "Marcas de agua",
+      "intro": "Hasta 3 marcas que se aplican a todas tus galerías con marca activa.",
+      "regenNote": "Al guardar cambios, las fotos existentes necesitarán actualizarse — verás el banner \"Actualizar fotos\" en cada galería.",
+      "add": "+ Agregar marca",
+      "slot": "Marca {n}",
+      "typeText": "Texto",
+      "typeImage": "Imagen (PNG)",
+      "textPlaceholder": "© Tu estudio",
+      "uploadPng": "Subir PNG",
+      "uploading": "Subiendo…",
+      "replacePng": "Reemplazar PNG",
+      "invalidPng": "Debe ser un PNG de máximo 5 MB.",
+      "opacity": "Opacidad",
+      "size": "Tamaño",
+      "position": "Posición",
+      "tile": "Mosaico",
+      "save": "Guardar marca",
+      "delete": "Eliminar",
+      "saved": "Guardada.",
+      "incomplete": "Completa el texto o sube un PNG antes de guardar.",
+      "error": "No se pudo guardar. Inténtalo de nuevo.",
+      "preview": "Vista previa",
+      "previewLoading": "Generando vista previa…",
+      "previewError": "No se pudo generar la vista previa."
+    }
   },
   "galleries": {
     "title": "Galerías",
