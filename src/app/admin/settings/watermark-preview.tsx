@@ -61,11 +61,12 @@ export function WatermarkPreview({
       if (abortController.current) {
         abortController.current.abort();
       }
-      if (urlRef.current) {
-        URL.revokeObjectURL(urlRef.current);
-      }
     };
   }, [slots]);
+
+  useEffect(() => () => {
+    if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+  }, []);
 
   return (
     <div className="space-y-2">
