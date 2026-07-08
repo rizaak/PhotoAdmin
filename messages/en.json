@@ -131,6 +131,11 @@
     "yourActivity": "Only you and the photographer can see your likes and comments.",
     "actionError": "Could not save. Reload the page and try again.",
     "download": "Download",
-    "resolutions": { "web": "Web", "high": "High resolution", "original": "Original" }
+    "resolutions": { "web": "Web", "high": "High resolution", "original": "Original" },
+    "downloadGallery": "Download gallery",
+    "downloadFavorites": "Download my favorites",
+    "downloadSection": "Download this section",
+    "zipError": "No photos are available to download.",
+    "zipUnavailable": "ZIP download is not available right now."
   }
 }

@@ -131,6 +131,11 @@
     "yourActivity": "Solo tú y el fotógrafo ven tus me gusta y comentarios.",
     "actionError": "No se pudo guardar. Recarga la página e inténtalo de nuevo.",
     "download": "Descargar",
-    "resolutions": { "web": "Web", "high": "Alta resolución", "original": "Original" }
+    "resolutions": { "web": "Web", "high": "Alta resolución", "original": "Original" },
+    "downloadGallery": "Descargar galería",
+    "downloadFavorites": "Descargar mis favoritas",
+    "downloadSection": "Descargar esta sección",
+    "zipError": "No hay fotos disponibles para descargar.",
+    "zipUnavailable": "La descarga en ZIP no está disponible por ahora."
   }
 }

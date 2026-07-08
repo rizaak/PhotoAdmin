@@ -72,6 +72,10 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
     { id: null, name: null },
     ...data.sections.map((s) => ({ id: s.id, name: s.name })),
   ];
+  const zip = {
+    enabled: photoViews.some((p) => p.downloads.length > 0),
+    resolutions: enabledResolutions(data.gallery),
+  };
 
   return (
     <ClientGallery
@@ -83,12 +87,15 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
       coverFocalY={data.gallery.coverFocalY}
       sections={sectionBlocks}
       photos={photoViews.filter((p) => p.thumbUrl && p.webUrl)}
+      zip={zip}
       labels={{
         like: t("like"), unlike: t("unlike"), comments: t("comments"),
         commentPlaceholder: t("commentPlaceholder"), send: t("send"),
         empty: t("empty"), yourActivity: t("yourActivity"), actionError: t("actionError"),
         download: t("download"),
         resolutions: { web: t("resolutions.web"), high: t("resolutions.high"), original: t("resolutions.original") },
+        downloadGallery: t("downloadGallery"), downloadFavorites: t("downloadFavorites"),
+        downloadSection: t("downloadSection"), zipError: t("zipError"), zipUnavailable: t("zipUnavailable"),
       }}
     />
   );

@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
@@ -7,7 +8,7 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { studios, clients, photos, sections, activityEvents } from "@/db/schema";
-import { accessGallery } from "@/server/client-access";
+import { accessGallery, getClientGalleryData } from "@/server/client-access";
 import { signClientSession, clientCookieOptions, CLIENT_COOKIE } from "@/server/client-session";
 import { checkRateLimit, isRateLimited } from "@/server/rate-limit";
 import { notifyPhotographer, firstAccessEmail, commentEmail } from "@/server/emails";
@@ -16,7 +17,8 @@ import { toggleLike, addComment } from "@/server/engagement";
 import {
   effectiveWatermarkMode, effectiveDownloadEnabled, enabledResolutions, downloadKey,
 } from "@/server/delivery";
-import { presignDownload } from "@/server/storage";
+import { presignDownload, putObjectBuffer } from "@/server/storage";
+import { buildZipManifest, signZipToken } from "@/server/zip";
 
 export type EnterState = { error: "invalidPassword" | "tooManyAttempts" | "genericError" } | null;
 
@@ -136,4 +138,66 @@ export async function downloadPhotoAction(
     metadata: { resolution: data.resolution },
   });
   return { url };
+}
+
+const zipInput = z.object({
+  slug: z.string().min(1),
+  scope: z.discriminatedUnion("type", [
+    z.object({ type: z.literal("gallery") }),
+    z.object({ type: z.literal("favorites") }),
+    z.object({ type: z.literal("section"), sectionId: z.string().uuid() }),
+  ]),
+  resolution: z.enum(["web", "high", "original"]),
+});
+
+export async function zipRequestAction(
+  input: { slug: string; scope: { type: "gallery" | "favorites" } | { type: "section"; sectionId: string }; resolution: "web" | "high" | "original" },
+): Promise<{ url: string }> {
+  const data = zipInput.parse(input);
+  const workerUrl = process.env.ZIP_WORKER_URL;
+  if (!workerUrl || !process.env.ZIP_SIGNING_SECRET) throw new Error("ZIP_NOT_CONFIGURED");
+
+  const { gallery, clientId } = await requireClientSession(data.slug);
+  if (!checkRateLimit(`zip:${clientId}`, 10, 60_000)) throw new Error("RATE_LIMITED");
+
+  const galleryData = await getClientGalleryData(db, gallery.id, clientId);
+  if (!enabledResolutions(gallery).includes(data.resolution)) throw new Error("NOT_AVAILABLE");
+
+  const sectionById = new Map(galleryData.sections.map((s) => [s.id, s]));
+  let candidates = galleryData.photos;
+  if (data.scope.type === "section") {
+    candidates = candidates.filter((p) => p.sectionId === (data.scope as { sectionId: string }).sectionId);
+  } else if (data.scope.type === "favorites") {
+    const liked = new Set(galleryData.likedPhotoIds);
+    candidates = candidates.filter((p) => liked.has(p.id));
+  }
+
+  const entries: { key: string; name: string }[] = [];
+  for (const photo of candidates) {
+    const section = photo.sectionId ? sectionById.get(photo.sectionId) ?? null : null;
+    if (!effectiveDownloadEnabled(section, gallery)) continue;
+    const mode = effectiveWatermarkMode(photo, section, gallery);
+    const key = downloadKey(photo, mode, data.resolution);
+    if (!key) continue;
+    const stem = photo.filename.replace(/\.[^.]+$/, "");
+    entries.push({
+      key,
+      name: data.resolution === "original" ? photo.filename
+        : data.resolution === "web" ? `${stem}-web.jpg` : `${stem}-alta.jpg`,
+    });
+  }
+
+  const manifest = buildZipManifest({
+    zipName: `${gallery.title.replace(/[^\w. -]+/g, "_")}.zip`,
+    entries,
+  });
+  const manifestKey = `studios/${gallery.studioId}/galleries/${gallery.id}/zips/${randomUUID()}.json`;
+  await putObjectBuffer(manifestKey, Buffer.from(JSON.stringify(manifest)), "application/json");
+  const token = await signZipToken(manifestKey);
+
+  await db.insert(activityEvents).values({
+    galleryId: gallery.id, clientId, type: "download_zip",
+    metadata: { scope: data.scope.type, resolution: data.resolution, count: manifest.files.length },
+  });
+  return { url: `${workerUrl.replace(/\/$/, "")}/?token=${token}` };
 }

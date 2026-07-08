@@ -1,0 +1,7 @@
+name = "phonomanager-zip"
+main = "src/index.ts"
+compatibility_date = "2026-06-01"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "phonomanager"

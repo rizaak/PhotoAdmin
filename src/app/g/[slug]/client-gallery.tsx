@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { toggleLikeAction, addCommentAction, downloadPhotoAction } from "./actions";
+import {
+  toggleLikeAction, addCommentAction, downloadPhotoAction, zipRequestAction,
+} from "./actions";
 
 export type ClientPhoto = {
   id: string;
@@ -18,22 +20,28 @@ type Labels = {
   like: string; unlike: string; comments: string; commentPlaceholder: string;
   send: string; empty: string; yourActivity: string; actionError: string;
   download: string; resolutions: { web: string; high: string; original: string };
+  downloadGallery: string; downloadFavorites: string; downloadSection: string;
+  zipError: string; zipUnavailable: string;
 };
 
 export function ClientGallery({
   slug, title, theme, coverUrl, coverFocalX, coverFocalY,
-  sections, photos: initialPhotos, labels,
+  sections, photos: initialPhotos, labels, zip,
 }: {
   slug: string; title: string; theme: "light" | "dark";
   coverUrl: string | null; coverFocalX: number; coverFocalY: number;
   sections: { id: string | null; name: string | null }[];
   photos: ClientPhoto[]; labels: Labels;
+  zip: { enabled: boolean; resolutions: ("web" | "high" | "original")[] };
 }) {
   const [photos, setPhotos] = useState(initialPhotos);
   const [openPhoto, setOpenPhoto] = useState<ClientPhoto | null>(null);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [resolution, setResolution] = useState<"web" | "high" | "original">("web");
+  const [zipResolution, setZipResolution] = useState<"web" | "high" | "original">(
+    zip.resolutions[0] ?? "web",
+  );
 
   const dark = theme === "dark";
   const bg = dark ? "bg-neutral-950 text-neutral-100" : "bg-white text-neutral-900";
@@ -60,6 +68,17 @@ export function ClientGallery({
       window.location.assign(url);
     } catch {
       alert(labels.actionError);
+    }
+  }
+
+  async function onZip(scope: { type: "gallery" | "favorites" } | { type: "section"; sectionId: string }) {
+    try {
+      const { url } = await zipRequestAction({ slug, scope, resolution: zipResolution });
+      window.location.assign(url);
+    } catch (e) {
+      const msg = e instanceof Error && e.message.includes("ZIP_NOT_CONFIGURED")
+        ? labels.zipUnavailable : labels.zipError;
+      alert(msg);
     }
   }
 
@@ -101,12 +120,46 @@ export function ClientGallery({
 
       <p className="mx-auto max-w-5xl px-4 pt-4 text-xs opacity-60">{labels.yourActivity}</p>
 
+      {zip.enabled && zip.resolutions.length > 0 && (
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-2 px-4 pt-3">
+          <select
+            value={zipResolution}
+            onChange={(e) => setZipResolution(e.target.value as typeof zipResolution)}
+            className="rounded border px-2 py-1.5 text-sm"
+          >
+            {zip.resolutions.map((r) => (
+              <option key={r} value={r}>{labels.resolutions[r]}</option>
+            ))}
+          </select>
+          <button onClick={() => void onZip({ type: "gallery" })} className="rounded border px-3 py-1.5 text-sm">
+            ⬇ {labels.downloadGallery}
+          </button>
+          <button onClick={() => void onZip({ type: "favorites" })} className="rounded border px-3 py-1.5 text-sm">
+            ⬇ {labels.downloadFavorites}
+          </button>
+        </div>
+      )}
+
       {photos.length === 0 && <p className="p-10 text-center text-sm opacity-60">{labels.empty}</p>}
 
       <div className="mx-auto max-w-5xl space-y-10 p-4">
         {bySection.map((s) => (
           <section key={s.id ?? "none"}>
-            {s.name && <h2 className="mb-3 font-serif text-2xl">{s.name}</h2>}
+            {s.name && (
+              <h2 className="mb-3 flex items-center gap-2 font-serif text-2xl">
+                {s.name}
+                {zip.enabled && zip.resolutions.length > 0 && s.id && (
+                  <button
+                    title={labels.downloadSection}
+                    aria-label={labels.downloadSection}
+                    onClick={() => void onZip({ type: "section", sectionId: s.id! })}
+                    className="text-sm font-sans opacity-60 hover:opacity-100"
+                  >
+                    ⬇
+                  </button>
+                )}
+              </h2>
+            )}
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
               {s.photos.map((p) => (
                 <figure key={p.id} className="group relative cursor-pointer" onClick={() => openLightbox(p)}>
