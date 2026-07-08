@@ -8,7 +8,7 @@ const keys = {
   originalKey: "o", thumbKey: "t", webKey: "w", highKey: "h",
   thumbWmKey: "twm", webWmKey: "wwm", highWmKey: "hwm",
 };
-const gal = (over = {}) => ({ watermarkMode: "view" as const, watermarkText: "©", ...over });
+const gal = (over = {}) => ({ watermarkMode: "view" as const, hasWatermarks: true, ...over });
 
 describe("effectiveWatermarkMode", () => {
   it("resolves photo > section > gallery inheritance", () => {
@@ -18,8 +18,8 @@ describe("effectiveWatermarkMode", () => {
     expect(effectiveWatermarkMode({ watermarkOverride: true }, { watermarkMode: null }, gal({ watermarkMode: "none" }))).toBe("both");
     expect(effectiveWatermarkMode({ watermarkOverride: false }, { watermarkMode: "both" }, gal())).toBe("none");
   });
-  it("is none without watermark text regardless of settings", () => {
-    expect(effectiveWatermarkMode({ watermarkOverride: true }, { watermarkMode: "both" }, gal({ watermarkText: null }))).toBe("none");
+  it("is none when the studio has no watermarks regardless of settings", () => {
+    expect(effectiveWatermarkMode({ watermarkOverride: true }, { watermarkMode: "both" }, gal({ hasWatermarks: false }))).toBe("none");
   });
 });
 
@@ -75,7 +75,7 @@ describe("clientViewPhotos", () => {
       { ...base, id: "b", sectionId: "s2" },              // sección exige view → wm
       { ...base, id: "c", sectionId: "s2", webWmKey: null }, // falta variante → excluida
     ];
-    const out = clientViewPhotos(photos, sections, { watermarkMode: "none", watermarkText: "©" });
+    const out = clientViewPhotos(photos, sections, { watermarkMode: "none", hasWatermarks: true });
     expect(out.map((p) => p.id)).toEqual(["a", "b"]);
     expect(out[0].webKey).toBe("w");
     expect(out[1].webKey).toBe("wwm");

@@ -12,6 +12,10 @@ export const galleryThemeEnum = pgEnum("gallery_theme", ["light", "dark"]);
 export const activityTypeEnum = pgEnum("activity_type", [
   "access", "like_added", "like_removed", "comment", "download_photo", "download_zip",
 ]);
+export const watermarkTypeEnum = pgEnum("watermark_type", ["text", "image"]);
+export const watermarkPlacementEnum = pgEnum("watermark_placement", [
+  "tl", "tc", "tr", "ml", "center", "mr", "bl", "bc", "br", "tile",
+]);
 
 export const studios = pgTable("studios", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -41,8 +45,6 @@ export const galleries = pgTable("galleries", {
   resHighEnabled: boolean("res_high_enabled").notNull().default(false),
   resOriginalEnabled: boolean("res_original_enabled").notNull().default(false),
   watermarkMode: watermarkModeEnum("watermark_mode").notNull().default("none"),
-  watermarkText: text("watermark_text"),
-  watermarkImageKey: text("watermark_image_key"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -131,8 +133,22 @@ export const apiKeys = pgTable("api_keys", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const watermarks = pgTable("watermarks", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  studioId: uuid("studio_id").notNull().references(() => studios.id, { onDelete: "cascade" }),
+  slot: integer("slot").notNull(),
+  type: watermarkTypeEnum("type").notNull(),
+  text: text("text"),
+  imageKey: text("image_key"),
+  opacityPct: integer("opacity_pct").notNull(),
+  sizePct: integer("size_pct").notNull(),
+  placement: watermarkPlacementEnum("placement").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [uniqueIndex("watermarks_studio_slot_idx").on(t.studioId, t.slot)]);
+
 export type Studio = typeof studios.$inferSelect;
 export type Gallery = typeof galleries.$inferSelect;
 export type Section = typeof sections.$inferSelect;
 export type Photo = typeof photos.$inferSelect;
+export type Watermark = typeof watermarks.$inferSelect;
 export type GalleryStatus = (typeof galleryStatusEnum.enumValues)[number];

@@ -4,9 +4,9 @@ export type Resolution = "web" | "high" | "original";
 export function effectiveWatermarkMode(
   photo: { watermarkOverride: boolean | null },
   section: { watermarkMode: WatermarkMode | null } | null,
-  gallery: { watermarkMode: WatermarkMode; watermarkText: string | null },
+  gallery: { watermarkMode: WatermarkMode; hasWatermarks: boolean },
 ): WatermarkMode {
-  if (!gallery.watermarkText) return "none";
+  if (!gallery.hasWatermarks) return "none";
   if (photo.watermarkOverride === false) return "none";
   if (photo.watermarkOverride === true) return "both";
   return section?.watermarkMode ?? gallery.watermarkMode;
@@ -56,7 +56,7 @@ export function clientViewPhotos<
 >(
   photos: P[],
   sections: { id: string; watermarkMode: WatermarkMode | null }[],
-  gallery: { watermarkMode: WatermarkMode; watermarkText: string | null },
+  gallery: { watermarkMode: WatermarkMode; hasWatermarks: boolean },
 ): { id: string; sectionId: string | null; thumbKey: string; webKey: string }[] {
   const sectionById = new Map(sections.map((s) => [s.id, s]));
   const out: { id: string; sectionId: string | null; thumbKey: string; webKey: string }[] = [];

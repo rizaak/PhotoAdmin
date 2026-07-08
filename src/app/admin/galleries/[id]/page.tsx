@@ -7,6 +7,7 @@ import { getGallery } from "@/server/galleries";
 import { listSections } from "@/server/sections";
 import { listGalleryPhotos } from "@/server/photos";
 import { presignDownload } from "@/server/storage";
+import { listWatermarks } from "@/server/watermarks";
 import {
   updateGalleryAction, addSectionAction, renameSectionAction,
   toggleSectionAction, moveSectionAction, deleteSectionAction, setSectionOverridesAction,
@@ -41,10 +42,11 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
   );
   const tp = await getTranslations("galleryDetail.photos");
   const tu = await getTranslations("galleryDetail.upload");
+  const hasWatermarks = (await listWatermarks(db, studio.id)).length > 0;
   const pendingReprocess = photoRows
     .filter((p) =>
       p.status === "error" ||
-      (p.status === "ready" && (gallery.watermarkText ? !p.webWmKey : !!p.webWmKey)) ||
+      (p.status === "ready" && (hasWatermarks ? !p.webWmKey : !!p.webWmKey)) ||
       (p.status === "ready" && !p.highKey),
     )
     .map((p) => p.id);
@@ -111,10 +113,10 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
               <option value="both">{t("watermarks.both")}</option>
             </select>
           </label>
-          <label className="flex flex-col gap-1">
-            {t("watermarkText")}
-            <input name="watermarkText" defaultValue={gallery.watermarkText ?? ""} maxLength={100} className={input} />
-          </label>
+          <p className="col-span-2 -mt-2 text-xs text-neutral-500">
+            {t("watermarkHint")}{" "}
+            <Link href="/admin/settings" className="underline">{t("watermarkHintLink")}</Link>
+          </p>
           <fieldset className="col-span-2 flex flex-wrap items-center gap-4">
             <label className="flex items-center gap-2">
               <input type="checkbox" name="downloadEnabled" defaultChecked={gallery.downloadEnabled} className={check} />

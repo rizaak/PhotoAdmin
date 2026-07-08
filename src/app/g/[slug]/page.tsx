@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { getClientGalleryData, getPublicGallery } from "@/server/client-access";
 import { getOptionalClientSession } from "@/server/client-auth";
 import { presignDownload } from "@/server/storage";
+import { listWatermarks } from "@/server/watermarks";
 import {
   clientViewPhotos, effectiveWatermarkMode, effectiveDownloadEnabled, enabledResolutions, downloadKey,
 } from "@/server/delivery";
@@ -40,7 +41,9 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
   }
 
   const data = await getClientGalleryData(db, session.gallery.id, session.clientId);
-  const viewList = clientViewPhotos(data.photos, data.sections, data.gallery);
+  const hasWatermarks = (await listWatermarks(db, data.gallery.studioId)).length > 0;
+  const watermarkGallery = { watermarkMode: data.gallery.watermarkMode, hasWatermarks };
+  const viewList = clientViewPhotos(data.photos, data.sections, watermarkGallery);
   const byId = new Map(data.photos.map((p) => [p.id, p]));
   const sectionById = new Map(data.sections.map((s) => [s.id, s]));
   const resolutions = enabledResolutions(data.gallery);
@@ -48,7 +51,7 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
     viewList.map(async (v) => {
       const p = byId.get(v.id)!;
       const section = p.sectionId ? sectionById.get(p.sectionId) ?? null : null;
-      const mode = effectiveWatermarkMode(p, section, data.gallery);
+      const mode = effectiveWatermarkMode(p, section, watermarkGallery);
       const downloads = effectiveDownloadEnabled(section, data.gallery)
         ? resolutions.filter((r) => downloadKey(p, mode, r) !== null)
         : [];

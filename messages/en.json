@@ -1,6 +1,36 @@
 {
   "adminLayout": {
+    "settings": "Settings",
     "logout": "Log out"
+  },
+  "settings": {
+    "title": "Settings",
+    "watermarks": {
+      "title": "Watermarks",
+      "intro": "Up to 3 marks applied to every gallery with watermarking enabled.",
+      "regenNote": "After saving, existing photos will need updating — you'll see the \"Update photos\" banner in each gallery.",
+      "add": "+ Add mark",
+      "slot": "Mark {n}",
+      "typeText": "Text",
+      "typeImage": "Image (PNG)",
+      "textPlaceholder": "© Your studio",
+      "uploadPng": "Upload PNG",
+      "uploading": "Uploading…",
+      "replacePng": "Replace PNG",
+      "invalidPng": "Must be a PNG up to 5 MB.",
+      "opacity": "Opacity",
+      "size": "Size",
+      "position": "Position",
+      "tile": "Tiled",
+      "save": "Save mark",
+      "delete": "Delete",
+      "saved": "Saved.",
+      "incomplete": "Fill the text or upload a PNG before saving.",
+      "error": "Could not save. Try again.",
+      "preview": "Preview",
+      "previewLoading": "Generating preview…",
+      "previewError": "Preview could not be generated."
+    }
   },
   "galleries": {
     "title": "Galleries",
@@ -27,7 +57,8 @@
     "orders": { "capture": "Capture date", "filename": "Filename", "manual": "Manual" },
     "watermarkMode": "Watermark",
     "watermarks": { "none": "None", "view": "On view", "download": "On download", "both": "Both" },
-    "watermarkText": "Watermark text (empty = no watermark)",
+    "watermarkHint": "Watermarks are configured in",
+    "watermarkHintLink": "Settings →",
     "overrides": {
       "inherit": "Inherit",
       "watermark": "Watermark",

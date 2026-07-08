@@ -10,7 +10,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-screen bg-neutral-50 text-neutral-900">
       <header className="flex items-center justify-between border-b bg-white px-6 py-3">
         <a href="/admin" className="font-semibold tracking-tight">PhonoManager</a>
-        <a href="/auth/logout" className="text-sm text-neutral-500 hover:text-neutral-900">{t("logout")}</a>
+        <nav className="flex items-center gap-4 text-sm">
+          <a href="/admin/settings" className="text-neutral-500 hover:text-neutral-900">{t("settings")}</a>
+          <a href="/auth/logout" className="text-neutral-500 hover:text-neutral-900">{t("logout")}</a>
+        </nav>
       </header>
       <main className="mx-auto max-w-5xl p-6">{children}</main>
     </div>

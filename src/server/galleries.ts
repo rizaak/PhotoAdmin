@@ -21,7 +21,6 @@ const updateGallerySchema = z.object({
   resHighEnabled: z.boolean().optional(),
   resOriginalEnabled: z.boolean().optional(),
   watermarkMode: z.enum(["none", "view", "download", "both"]).optional(),
-  watermarkText: z.string().max(100).nullable().optional(),
   password: z.string().min(4).max(100).nullable().optional(),
 });
 export type UpdateGalleryInput = z.infer<typeof updateGallerySchema>;
@@ -63,23 +62,9 @@ export async function updateGallerySettings(
     values.passwordHash = password === null ? null : await bcrypt.hash(password, 10);
   }
 
-  let textChanged = false;
-  if (data.watermarkText !== undefined) {
-    const current = await getGallery(db, studioId, galleryId);
-    textChanged = current.watermarkText != null && data.watermarkText != null
-      && current.watermarkText !== data.watermarkText;
-  }
-
-  const gallery = await db.transaction(async (tx) => {
-    if (textChanged) {
-      await tx.update(photos).set({ thumbWmKey: null, webWmKey: null, highWmKey: null })
-        .where(eq(photos.galleryId, galleryId));
-    }
-    const [row] = await tx.update(galleries).set(values)
-      .where(and(eq(galleries.id, galleryId), eq(galleries.studioId, studioId)))
-      .returning();
-    return row;
-  });
+  const [gallery] = await db.update(galleries).set(values)
+    .where(and(eq(galleries.id, galleryId), eq(galleries.studioId, studioId)))
+    .returning();
   if (!gallery) throw new Error("NOT_FOUND");
   return gallery;
 }
