@@ -7,9 +7,10 @@ import { requireStudio } from "@/server/auth";
 import { updateGallerySettings } from "@/server/galleries";
 import {
   createSection, renameSection, setSectionVisible, reorderSections, deleteSection, listSections,
+  setSectionOverrides,
 } from "@/server/sections";
 import {
-  movePhotos, setPhotosPublished, deletePhotos, setCoverPhoto,
+  movePhotos, setPhotosPublished, deletePhotos, setCoverPhoto, setPhotosWatermarkOverride,
 } from "@/server/photos";
 import { deleteObjects } from "@/server/storage";
 
@@ -21,6 +22,7 @@ const settingsForm = z.object({
   theme: z.enum(["light", "dark"]),
   photoOrder: z.enum(["capture", "filename", "manual"]),
   watermarkMode: z.enum(["none", "view", "download", "both"]),
+  watermarkText: z.string().max(100).nullable(),
   downloadEnabled: z.boolean(),
   resWebEnabled: z.boolean(),
   resHighEnabled: z.boolean(),
@@ -36,6 +38,7 @@ export async function updateGalleryAction(formData: FormData) {
     theme: formData.get("theme"),
     photoOrder: formData.get("photoOrder"),
     watermarkMode: formData.get("watermarkMode"),
+    watermarkText: String(formData.get("watermarkText") ?? "").trim() || null,
     downloadEnabled: formData.get("downloadEnabled") === "on",
     resWebEnabled: formData.get("resWebEnabled") === "on",
     resHighEnabled: formData.get("resHighEnabled") === "on",
@@ -96,6 +99,19 @@ export async function deleteSectionAction(formData: FormData) {
   revalidatePath(`/admin/galleries/${galleryId}`);
 }
 
+export async function setSectionOverridesAction(formData: FormData) {
+  const studio = await requireStudio();
+  const galleryId = id.parse(formData.get("galleryId"));
+  const sectionId = id.parse(formData.get("sectionId"));
+  const wm = String(formData.get("watermarkMode") ?? "");
+  const dl = String(formData.get("downloadEnabled") ?? "");
+  await setSectionOverrides(db, studio.id, sectionId, {
+    watermarkMode: wm === "" ? null : (wm as "none" | "view" | "download" | "both"),
+    downloadEnabled: dl === "" ? null : dl === "true",
+  });
+  revalidatePath(`/admin/galleries/${galleryId}`);
+}
+
 const photoIds = z.array(z.string().uuid()).min(1).max(500);
 const photoBatch = z.object({ galleryId: z.string().uuid(), photoIds });
 
@@ -125,5 +141,12 @@ export async function setCoverAction(input: { galleryId: string; photoId: string
   const studio = await requireStudio();
   const data = z.object({ galleryId: z.string().uuid(), photoId: z.string().uuid() }).parse(input);
   await setCoverPhoto(db, studio.id, data.galleryId, data.photoId);
+  revalidatePath(`/admin/galleries/${data.galleryId}`);
+}
+
+export async function setWatermarkOverrideAction(input: { galleryId: string; photoIds: string[]; override: boolean | null }) {
+  const studio = await requireStudio();
+  const data = photoBatch.extend({ override: z.boolean().nullable() }).parse(input);
+  await setPhotosWatermarkOverride(db, studio.id, data.galleryId, data.photoIds, data.override);
   revalidatePath(`/admin/galleries/${data.galleryId}`);
 }

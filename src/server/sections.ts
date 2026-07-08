@@ -53,6 +53,24 @@ export async function setSectionVisible(db: Db, studioId: string, sectionId: str
   return section;
 }
 
+const overridesSchema = z.object({
+  watermarkMode: z.enum(["none", "view", "download", "both"]).nullable(),
+  downloadEnabled: z.boolean().nullable(),
+});
+
+export async function setSectionOverrides(
+  db: Db, studioId: string, sectionId: string,
+  overrides: { watermarkMode: "none" | "view" | "download" | "both" | null; downloadEnabled: boolean | null },
+): Promise<Section> {
+  const data = overridesSchema.parse(overrides);
+  await assertSectionOwnership(db, studioId, sectionId);
+  const [section] = await db.update(sections)
+    .set({ watermarkMode: data.watermarkMode, downloadEnabled: data.downloadEnabled })
+    .where(eq(sections.id, sectionId))
+    .returning();
+  return section;
+}
+
 export async function reorderSections(db: Db, studioId: string, galleryId: string, orderedIds: string[]): Promise<void> {
   await getGallery(db, studioId, galleryId);
 

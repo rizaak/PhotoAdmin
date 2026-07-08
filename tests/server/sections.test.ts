@@ -4,6 +4,7 @@ import { createTestDb, seedStudio } from "../helpers/db";
 import { createGallery } from "@/server/galleries";
 import {
   createSection, renameSection, setSectionVisible, reorderSections, deleteSection, listSections,
+  setSectionOverrides,
 } from "@/server/sections";
 import { photos } from "@/db/schema";
 
@@ -60,6 +61,20 @@ describe("sections domain", () => {
     // incomplete list
     await expect(reorderSections(db, studio.id, gallery.id, [s2.id]))
       .rejects.toThrow("INVALID_ORDER");
+  });
+
+  it("sets and clears delivery overrides tenant-scoped", async () => {
+    const { db, studio, gallery } = await setup();
+    const s = await createSection(db, studio.id, gallery.id, "Selección");
+    const updated = await setSectionOverrides(db, studio.id, s.id, { watermarkMode: "both", downloadEnabled: false });
+    expect(updated.watermarkMode).toBe("both");
+    expect(updated.downloadEnabled).toBe(false);
+    const cleared = await setSectionOverrides(db, studio.id, s.id, { watermarkMode: null, downloadEnabled: null });
+    expect(cleared.watermarkMode).toBeNull();
+    expect(cleared.downloadEnabled).toBeNull();
+    const intruder = await seedStudio(db, "auth0|intruso2");
+    await expect(setSectionOverrides(db, intruder.id, s.id, { watermarkMode: null, downloadEnabled: null }))
+      .rejects.toThrow("NOT_FOUND");
   });
 
   it("is tenant-scoped", async () => {

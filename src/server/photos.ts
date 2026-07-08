@@ -127,6 +127,15 @@ export async function setPhotosPublished(
     .where(and(inArray(photos.id, ids), eq(photos.galleryId, galleryId)));
 }
 
+export async function setPhotosWatermarkOverride(
+  db: Db, studioId: string, galleryId: string, photoIds: string[], override: boolean | null,
+): Promise<void> {
+  const ids = idList.parse(photoIds);
+  await assertPhotosInGallery(db, studioId, galleryId, ids);
+  await db.update(photos).set({ watermarkOverride: override })
+    .where(and(inArray(photos.id, ids), eq(photos.galleryId, galleryId)));
+}
+
 export async function deletePhotos(
   db: Db, studioId: string, galleryId: string, photoIds: string[],
 ): Promise<string[]> {

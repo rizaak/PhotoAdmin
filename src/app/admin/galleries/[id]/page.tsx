@@ -9,7 +9,7 @@ import { listGalleryPhotos } from "@/server/photos";
 import { presignDownload } from "@/server/storage";
 import {
   updateGalleryAction, addSectionAction, renameSectionAction,
-  toggleSectionAction, moveSectionAction, deleteSectionAction,
+  toggleSectionAction, moveSectionAction, deleteSectionAction, setSectionOverridesAction,
 } from "./actions";
 import { PhotoUploader } from "./photo-uploader";
 import { PhotoManager, type PhotoView } from "./photo-manager";
@@ -111,6 +111,10 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
               <option value="both">{t("watermarks.both")}</option>
             </select>
           </label>
+          <label className="flex flex-col gap-1">
+            {t("watermarkText")}
+            <input name="watermarkText" defaultValue={gallery.watermarkText ?? ""} maxLength={100} className={input} />
+          </label>
           <fieldset className="col-span-2 flex flex-wrap items-center gap-4">
             <label className="flex items-center gap-2">
               <input type="checkbox" name="downloadEnabled" defaultChecked={gallery.downloadEnabled} className={check} />
@@ -150,7 +154,7 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
         <ul className="mb-4 divide-y">
           {sectionList.length === 0 && <li className="py-2 text-sm text-neutral-500">{t("noSections")}</li>}
           {sectionList.map((s, idx) => (
-            <li key={s.id} className="flex items-center gap-2 py-2 text-sm">
+            <li key={`${s.id}-${s.watermarkMode}-${s.downloadEnabled}`} className="flex items-center gap-2 py-2 text-sm">
               <form
                 key={`${s.id}-${s.name}`}
                 action={renameSectionAction}
@@ -186,6 +190,23 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
                 <input type="hidden" name="galleryId" value={gallery.id} />
                 <input type="hidden" name="sectionId" value={s.id} />
                 <button className="text-red-600 hover:underline">{t("delete")}</button>
+              </form>
+              <form action={setSectionOverridesAction} className="flex items-center gap-1 text-xs">
+                <input type="hidden" name="galleryId" value={gallery.id} />
+                <input type="hidden" name="sectionId" value={s.id} />
+                <select name="watermarkMode" defaultValue={s.watermarkMode ?? ""} className="rounded border px-1 py-0.5" title={t("overrides.watermark")}>
+                  <option value="">{t("overrides.inherit")}</option>
+                  <option value="none">{t("watermarks.none")}</option>
+                  <option value="view">{t("watermarks.view")}</option>
+                  <option value="download">{t("watermarks.download")}</option>
+                  <option value="both">{t("watermarks.both")}</option>
+                </select>
+                <select name="downloadEnabled" defaultValue={s.downloadEnabled === null ? "" : String(s.downloadEnabled)} className="rounded border px-1 py-0.5" title={t("overrides.download")}>
+                  <option value="">{t("overrides.inherit")}</option>
+                  <option value="true">{t("overrides.yes")}</option>
+                  <option value="false">{t("overrides.no")}</option>
+                </select>
+                <button className="text-neutral-600 hover:underline">{t("overrides.apply")}</button>
               </form>
             </li>
           ))}
@@ -232,6 +253,7 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
             delete: tp("delete"), deleteConfirm: tp.raw("deleteConfirm") as string, setCover: tp("setCover"),
             hiddenBadge: tp("hiddenBadge"), processingBadge: tp("processingBadge"),
             errorBadge: tp("errorBadge"), clear: tp("clear"), actionError: tp("actionError"),
+            wmApply: tp("wmApply"), wmRemove: tp("wmRemove"), wmInherit: tp("wmInherit"),
           }}
         />
       </section>

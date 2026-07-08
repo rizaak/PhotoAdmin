@@ -27,6 +27,15 @@
     "orders": { "capture": "Fecha de captura", "filename": "Nombre de archivo", "manual": "Manual" },
     "watermarkMode": "Marca de agua",
     "watermarks": { "none": "Sin marca", "view": "En vista", "download": "En descarga", "both": "Ambas" },
+    "watermarkText": "Texto de la marca de agua (vacío = sin marca)",
+    "overrides": {
+      "inherit": "Heredar",
+      "watermark": "Marca",
+      "download": "Descarga",
+      "yes": "Sí",
+      "no": "No",
+      "apply": "Aplicar"
+    },
     "downloadEnabled": "Permitir descargas",
     "resolutions": "Resoluciones habilitadas",
     "resWeb": "Web (2048px)", "resHigh": "Alta", "resOriginal": "Original",
@@ -69,7 +78,10 @@
       "processingBadge": "procesando",
       "errorBadge": "error",
       "clear": "Quitar selección",
-      "actionError": "No se pudo completar la acción. Recarga la página e inténtalo de nuevo."
+      "actionError": "No se pudo completar la acción. Recarga la página e inténtalo de nuevo.",
+      "wmApply": "Marca: aplicar",
+      "wmRemove": "Marca: quitar",
+      "wmInherit": "Marca: heredar"
     },
     "reprocess": {
       "pending": "{count} fotos pendientes de actualizar (marca de agua o errores)",

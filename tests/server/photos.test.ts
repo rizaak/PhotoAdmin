@@ -6,6 +6,7 @@ import { createSection } from "@/server/sections";
 import {
   registerUpload, getOwnedPhoto, completeProcessing, markPhotoError, listGalleryPhotos,
   movePhotos, setPhotosPublished, deletePhotos, setCoverPhoto, storageTotals, sanitizeFilename,
+  setPhotosWatermarkOverride,
 } from "@/server/photos";
 import { photos } from "@/db/schema";
 
@@ -157,6 +158,17 @@ describe("photos domain", () => {
     expect(totals.perGallery[gallery.id]).toBe(1200); // 1000 orig + 200 deriv
     expect(totals.perGallery[other.id]).toBe(5000);
     expect(totals.totalBytes).toBe(6200);
+  });
+
+  it("sets watermark override per photo batch", async () => {
+    const { db, studio, gallery } = await setup();
+    const p = await registerUpload(db, studio.id, gallery.id, upload());
+    await setPhotosWatermarkOverride(db, studio.id, gallery.id, [p.id], true);
+    expect((await getOwnedPhoto(db, studio.id, p.id)).watermarkOverride).toBe(true);
+    await setPhotosWatermarkOverride(db, studio.id, gallery.id, [p.id], null);
+    expect((await getOwnedPhoto(db, studio.id, p.id)).watermarkOverride).toBeNull();
+    const intruder = await seedStudio(db, "auth0|intruso3");
+    await expect(setPhotosWatermarkOverride(db, intruder.id, gallery.id, [p.id], false)).rejects.toThrow("NOT_FOUND");
   });
 
   it("is tenant-scoped for every mutator", async () => {

@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  movePhotosAction, setPublishedAction, deletePhotosAction, setCoverAction,
+  movePhotosAction, setPublishedAction, deletePhotosAction, setCoverAction, setWatermarkOverrideAction,
 } from "./actions";
 
 export type PhotoView = {
@@ -21,6 +21,7 @@ type Labels = {
   publish: string; hide: string; delete: string; deleteConfirm: string;
   setCover: string; hiddenBadge: string; processingBadge: string; errorBadge: string; clear: string;
   actionError: string;
+  wmApply: string; wmRemove: string; wmInherit: string;
 };
 
 type Rect = { x: number; y: number; w: number; h: number };
@@ -151,6 +152,18 @@ export function PhotoManager({
               {labels.setCover}
             </button>
           )}
+          <button disabled={pending} className="rounded border px-2 py-1"
+            onClick={() => run(() => setWatermarkOverrideAction({ galleryId, photoIds: ids, override: true }))}>
+            {labels.wmApply}
+          </button>
+          <button disabled={pending} className="rounded border px-2 py-1"
+            onClick={() => run(() => setWatermarkOverrideAction({ galleryId, photoIds: ids, override: false }))}>
+            {labels.wmRemove}
+          </button>
+          <button disabled={pending} className="rounded border px-2 py-1"
+            onClick={() => run(() => setWatermarkOverrideAction({ galleryId, photoIds: ids, override: null }))}>
+            {labels.wmInherit}
+          </button>
           <button disabled={pending} className="rounded border px-2 py-1 text-red-600"
             onClick={() => {
               if (confirm(labels.deleteConfirm.replace("{count}", String(selected.size)))) {
