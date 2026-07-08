@@ -17,6 +17,9 @@ export const watermarkPlacementEnum = pgEnum("watermark_placement", [
   "tl", "tc", "tr", "ml", "center", "mr", "bl", "bc", "br", "tile",
 ]);
 
+export const GALLERY_TEMPLATES = ["editorial", "cinematico", "luminoso", "clasico"] as const;
+export type GalleryTemplate = (typeof GALLERY_TEMPLATES)[number];
+
 export const studios = pgTable("studios", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
