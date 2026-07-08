@@ -70,6 +70,13 @@
       "errorBadge": "error",
       "clear": "Clear selection",
       "actionError": "The action could not be completed. Reload the page and try again."
+    },
+    "reprocess": {
+      "pending": "{count} photos pending update (watermark or errors)",
+      "run": "Update photos",
+      "running": "Processing {done} of {total}…",
+      "done": "Photos updated.",
+      "failed": "{count} photos failed; retry."
     }
   },
   "activity": {

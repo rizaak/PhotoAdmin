@@ -70,6 +70,13 @@
       "errorBadge": "error",
       "clear": "Quitar selección",
       "actionError": "No se pudo completar la acción. Recarga la página e inténtalo de nuevo."
+    },
+    "reprocess": {
+      "pending": "{count} fotos pendientes de actualizar (marca de agua o errores)",
+      "run": "Actualizar fotos",
+      "running": "Procesando {done} de {total}…",
+      "done": "Fotos actualizadas.",
+      "failed": "{count} fotos fallaron; reintenta."
     }
   },
   "activity": {

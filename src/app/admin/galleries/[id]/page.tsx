@@ -13,6 +13,7 @@ import {
 } from "./actions";
 import { PhotoUploader } from "./photo-uploader";
 import { PhotoManager, type PhotoView } from "./photo-manager";
+import { ReprocessPhotos } from "./reprocess-photos";
 
 export default async function GalleryDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -40,6 +41,14 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
   );
   const tp = await getTranslations("galleryDetail.photos");
   const tu = await getTranslations("galleryDetail.upload");
+  const pendingReprocess = photoRows
+    .filter((p) =>
+      p.status === "error" ||
+      (p.status === "ready" && (gallery.watermarkText ? !p.webWmKey : !!p.webWmKey)) ||
+      (p.status === "ready" && !p.highKey),
+    )
+    .map((p) => p.id);
+  const tr = await getTranslations("galleryDetail.reprocess");
 
   const check = "h-4 w-4 accent-neutral-900";
   const input = "rounded border px-3 py-1.5 text-sm";
@@ -190,6 +199,16 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
 
       <section className="rounded border bg-white p-4">
         <h2 className="mb-4 font-medium">{tp("title")}</h2>
+        <div className="mb-4">
+          <ReprocessPhotos
+            photoIds={pendingReprocess}
+            labels={{
+              pending: tr.raw("pending") as string, run: tr("run"),
+              running: tr.raw("running") as string, done: tr("done"),
+              failed: tr.raw("failed") as string,
+            }}
+          />
+        </div>
         <div className="mb-6">
           <PhotoUploader
             galleryId={gallery.id}
