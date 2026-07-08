@@ -54,6 +54,7 @@ export function ClientGallery({
   const [openId, setOpenId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [zipResolution, setZipResolution] = useState<Res>(zip.resolutions[0] ?? "web");
 
   useEffect(() => {
     if (!notice) return;
@@ -112,6 +113,7 @@ export function ClientGallery({
       <div ref={sentinelRef} className="absolute top-[60vh]" />
       <GalleryHeader
         template={template} title={title} sentinel={sentinelRef} zip={zip}
+        resolution={zipResolution} onResolutionChange={setZipResolution}
         onZip={(scope, res) => void onZip(scope, res)}
         labels={{
           downloadGallery: labels.downloadGallery, downloadFavorites: labels.downloadFavorites,
@@ -137,7 +139,7 @@ export function ClientGallery({
                   <button
                     title={labels.downloadSection}
                     aria-label={labels.downloadSection}
-                    onClick={() => void onZip({ type: "section", sectionId: s.id! }, zip.resolutions[0] ?? "web")}
+                    onClick={() => void onZip({ type: "section", sectionId: s.id! }, zipResolution)}
                     className="opacity-60 hover:opacity-100"
                   >
                     <IconDownload className="h-4 w-4" />
@@ -156,7 +158,7 @@ export function ClientGallery({
 
       {notice && (
         <div
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 rounded-full px-4 py-2 text-xs shadow-lg"
+          className="fixed bottom-4 left-1/2 z-[60] -translate-x-1/2 rounded-full px-4 py-2 text-xs shadow-lg"
           style={{ background: tk.surface, color: tk.text }}
         >
           {notice}

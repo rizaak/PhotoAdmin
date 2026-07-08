@@ -164,7 +164,9 @@ export function Lightbox({
         <AnimatePresence>
           {panel === "download" && (
             <motion.div key="dl" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
-              className="absolute bottom-24 left-1/2 flex -translate-x-1/2 flex-col gap-1 rounded-xl bg-neutral-900/85 p-2 text-sm text-white backdrop-blur-md">
+              className="absolute bottom-24 left-1/2 flex -translate-x-1/2 flex-col gap-1 rounded-xl bg-neutral-900/85 p-2 text-sm text-white backdrop-blur-md"
+              onClick={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()} onTouchEnd={(e) => e.stopPropagation()}>
               {photo.downloads.map((r) => (
                 <button key={r} disabled={busy}
                   onClick={() => { setPanel("none"); void onDownload(photo, r).catch(() => fail(labels.actionError)); }}
@@ -178,7 +180,8 @@ export function Lightbox({
             <motion.aside key="cm" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
               transition={{ type: "tween", duration: 0.25 }}
               className="absolute inset-y-0 right-0 w-full max-w-xs space-y-3 bg-neutral-900/92 p-5 text-white backdrop-blur-md"
-              onClick={(e) => e.stopPropagation()}>
+              onClick={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()} onTouchEnd={(e) => e.stopPropagation()}>
               <h3 className="text-sm opacity-80">{labels.comments}</h3>
               <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={4}
                 placeholder={labels.commentPlaceholder}

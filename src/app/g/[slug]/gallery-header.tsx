@@ -9,18 +9,18 @@ import { IconDownload } from "./icons";
 type Res = "web" | "high" | "original";
 
 export function GalleryHeader({
-  template, title, sentinel, zip, labels, onZip,
+  template, title, sentinel, zip, resolution, onResolutionChange, labels, onZip,
 }: {
   template: GalleryTemplate; title: string;
   sentinel: React.RefObject<HTMLElement | null>;
   zip: { enabled: boolean; resolutions: Res[] };
+  resolution: Res; onResolutionChange: (r: Res) => void;
   labels: { downloadGallery: string; downloadFavorites: string; resolutions: Record<Res, string> };
   onZip: (scope: { type: "gallery" | "favorites" }, resolution: Res) => void;
 }) {
   const tk = TEMPLATE_TOKENS[template];
   const [shown, setShown] = useState(false);
   const [open, setOpen] = useState(false);
-  const [resolution, setResolution] = useState<Res>(zip.resolutions[0] ?? "web");
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -65,7 +65,7 @@ export function GalleryHeader({
                 <div role="menu"
                   className="absolute right-0 mt-2 w-56 space-y-2 rounded-lg border p-3 text-sm shadow-xl"
                   style={{ background: tk.surface, borderColor: tk.dark ? "#3a3a40" : "#e5e5e5", color: tk.text }}>
-                  <select value={resolution} onChange={(e) => setResolution(e.target.value as Res)}
+                  <select value={resolution} onChange={(e) => onResolutionChange(e.target.value as Res)}
                     className="w-full rounded border bg-transparent px-2 py-1.5 text-xs"
                     style={{ borderColor: tk.dark ? "#3a3a40" : "#ddd" }}>
                     {zip.resolutions.map((r) => <option key={r} value={r}>{labels.resolutions[r]}</option>)}

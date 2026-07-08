@@ -39,7 +39,7 @@ export function AccessForm({
         action={formAction}
         initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
         className="relative w-full max-w-sm space-y-5 rounded-xl p-9 shadow-2xl backdrop-blur-md"
-        style={{ background: coverUrl ? "rgba(255,255,255,.92)" : tk.surface, color: "#1f1f1f" }}
+        style={{ background: coverUrl ? "rgba(255,255,255,.92)" : tk.surface, color: coverUrl ? "#1f1f1f" : tk.text }}
       >
         <p className="text-xs" style={{ color: tk.accent, letterSpacing: "0.25em", textTransform: "uppercase" }}>
           {labels.welcome}
