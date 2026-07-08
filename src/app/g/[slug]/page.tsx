@@ -66,7 +66,6 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
       };
     }),
   );
-  const zipEnabled = photoViews.some((p) => p.downloads.length > 0);
   const cover = viewList.find((v) => v.id === data.gallery.coverPhotoId);
   const coverUrl = cover ? await presignDownload(cover.webKey) : null;
   const sectionBlocks: { id: string | null; name: string | null }[] = [
