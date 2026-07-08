@@ -86,7 +86,7 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
       coverFocalX={data.gallery.coverFocalX}
       coverFocalY={data.gallery.coverFocalY}
       sections={sectionBlocks}
-      photos={photoViews.filter((p) => p.thumbUrl && p.webUrl)}
+      photos={photoViews}
       zip={zip}
       labels={{
         like: t("like"), unlike: t("unlike"), comments: t("comments"),

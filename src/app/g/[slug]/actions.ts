@@ -111,6 +111,7 @@ export async function downloadPhotoAction(
 ): Promise<{ url: string }> {
   const data = downloadInput.parse(input);
   const { gallery, clientId } = await requireClientSession(data.slug);
+  if (!checkRateLimit(`download:${clientId}`, 60, 60_000)) throw new Error("RATE_LIMITED");
 
   const [photo] = await db.select().from(photos)
     .where(and(eq(photos.id, data.photoId), eq(photos.galleryId, gallery.id)));

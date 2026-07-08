@@ -55,6 +55,9 @@ En producción, agregar el dominio de la app a `AllowedOrigins`.
 
 Sin estas variables la app funciona igual; solo la descarga ZIP queda deshabilitada.
 
+- El plan Free de Workers (10 ms de CPU por invocación) **no alcanza** para generar ZIPs reales — usa el plan pagado (Workers Paid, 30 s de CPU por defecto, suficiente para galerías de ~5-15 GB).
+- `bucket_name` en `workers/zip/wrangler.toml` debe coincidir con tu `R2_BUCKET` si tu bucket no se llama `phonomanager`.
+
 ## Comandos
 - `npm test` — Vitest (dominio, con PGlite en memoria; no requiere Postgres)
 - `npm run db:generate` — generar migraciones tras cambiar `src/db/schema.ts`

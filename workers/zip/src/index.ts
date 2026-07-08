@@ -134,7 +134,9 @@ export default {
 
     let manifestKey: string;
     try {
-      const { payload } = await jwtVerify(token, new TextEncoder().encode(env.ZIP_SIGNING_SECRET));
+      const { payload } = await jwtVerify(token, new TextEncoder().encode(env.ZIP_SIGNING_SECRET), {
+        algorithms: ["HS256"],
+      });
       if (typeof payload.m !== "string") throw new Error("bad payload");
       manifestKey = payload.m;
     } catch {
