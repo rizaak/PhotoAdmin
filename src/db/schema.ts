@@ -38,7 +38,7 @@ export const galleries = pgTable("galleries", {
   status: galleryStatusEnum("status").notNull().default("draft"),
   passwordHash: text("password_hash"),
   coverPhotoId: uuid("cover_photo_id").references((): AnyPgColumn => photos.id, { onDelete: "set null" }),
-  coverTemplate: text("cover_template").notNull().default("classic"),
+  coverTemplate: text("cover_template").notNull().default("editorial"),
   coverFocalX: real("cover_focal_x").notNull().default(0.5),
   coverFocalY: real("cover_focal_y").notNull().default(0.5),
   theme: galleryThemeEnum("theme").notNull().default("light"),
