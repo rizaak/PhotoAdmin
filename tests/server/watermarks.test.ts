@@ -89,4 +89,34 @@ describe("watermarks domain", () => {
     expect(await listWatermarks(db, b.id)).toHaveLength(0);
     await expect(deleteWatermark(db, b.id, 0)).rejects.toThrow("NOT_FOUND");
   });
+
+  it("isolates photo wm key invalidation to the modified studio", async () => {
+    const db = await createTestDb();
+    const studioA = await seedStudio(db, "auth0|wm-a");
+    const studioB = await seedStudio(db, "auth0|wm-b");
+
+    const gaA = await createGallery(db, studioA.id, { title: "Boda A" });
+    const [photoA] = await db.insert(photos).values({
+      galleryId: gaA.id, filename: "a.jpg", originalKey: "k/orig-a.jpg",
+      thumbWmKey: "k/thumb-wm-a.jpg", webWmKey: "k/web-wm-a.jpg", highWmKey: "k/high-wm-a.jpg",
+    }).returning();
+
+    const gaB = await createGallery(db, studioB.id, { title: "Boda B" });
+    const [photoB] = await db.insert(photos).values({
+      galleryId: gaB.id, filename: "b.jpg", originalKey: "k/orig-b.jpg",
+      thumbWmKey: "k/thumb-wm-b.jpg", webWmKey: "k/web-wm-b.jpg", highWmKey: "k/high-wm-b.jpg",
+    }).returning();
+
+    await saveWatermark(db, studioA.id, textInput(0));
+
+    const [afterA] = await db.select().from(photos).where(eq(photos.id, photoA.id));
+    expect(afterA.webWmKey).toBeNull();
+    expect(afterA.thumbWmKey).toBeNull();
+    expect(afterA.highWmKey).toBeNull();
+
+    const [afterB] = await db.select().from(photos).where(eq(photos.id, photoB.id));
+    expect(afterB.webWmKey).toBe("k/web-wm-b.jpg");
+    expect(afterB.thumbWmKey).toBe("k/thumb-wm-b.jpg");
+    expect(afterB.highWmKey).toBe("k/high-wm-b.jpg");
+  });
 });
