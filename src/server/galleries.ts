@@ -2,7 +2,7 @@ import { and, desc, eq, ilike } from "drizzle-orm";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import type { Db } from "@/db";
-import { galleries, photos, type Gallery, type GalleryStatus } from "@/db/schema";
+import { galleries, photos, watermarks, type Gallery, type GalleryStatus } from "@/db/schema";
 import { makeSlug } from "./slug";
 
 const createGallerySchema = z.object({
@@ -21,6 +21,7 @@ const updateGallerySchema = z.object({
   resHighEnabled: z.boolean().optional(),
   resOriginalEnabled: z.boolean().optional(),
   watermarkMode: z.enum(["none", "view", "download", "both"]).optional(),
+  watermarkId: z.string().uuid().nullable().optional(),
   password: z.string().min(4).max(100).nullable().optional(),
 });
 export type UpdateGalleryInput = z.infer<typeof updateGallerySchema>;
@@ -62,11 +63,28 @@ export async function updateGallerySettings(
     values.passwordHash = password === null ? null : await bcrypt.hash(password, 10);
   }
 
-  const [gallery] = await db.update(galleries).set(values)
-    .where(and(eq(galleries.id, galleryId), eq(galleries.studioId, studioId)))
-    .returning();
-  if (!gallery) throw new Error("NOT_FOUND");
-  return gallery;
+  return db.transaction(async (tx) => {
+    if (data.watermarkId !== undefined) {
+      const [current] = await tx.select({ watermarkId: galleries.watermarkId }).from(galleries)
+        .where(and(eq(galleries.id, galleryId), eq(galleries.studioId, studioId)));
+      if (!current) throw new Error("NOT_FOUND");
+      if (data.watermarkId !== null) {
+        const [wm] = await tx.select({ id: watermarks.id }).from(watermarks)
+          .where(and(eq(watermarks.id, data.watermarkId), eq(watermarks.studioId, studioId)));
+        if (!wm) throw new Error("INVALID_WATERMARK");
+      }
+      if (current.watermarkId !== data.watermarkId) {
+        await tx.update(photos)
+          .set({ thumbWmKey: null, webWmKey: null, highWmKey: null })
+          .where(eq(photos.galleryId, galleryId));
+      }
+    }
+    const [gallery] = await tx.update(galleries).set(values)
+      .where(and(eq(galleries.id, galleryId), eq(galleries.studioId, studioId)))
+      .returning();
+    if (!gallery) throw new Error("NOT_FOUND");
+    return gallery;
+  });
 }
 
 export async function deleteGallery(db: Db, studioId: string, galleryId: string): Promise<string[]> {

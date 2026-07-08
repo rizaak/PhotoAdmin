@@ -17,7 +17,6 @@ import { toggleLike, addComment } from "@/server/engagement";
 import {
   effectiveWatermarkMode, effectiveDownloadEnabled, enabledResolutions, downloadKey,
 } from "@/server/delivery";
-import { listWatermarks } from "@/server/watermarks";
 import { presignDownload, putObjectBuffer } from "@/server/storage";
 import { buildZipManifest, signZipToken } from "@/server/zip";
 
@@ -126,7 +125,7 @@ export async function downloadPhotoAction(
   if (!effectiveDownloadEnabled(section, gallery)) throw new Error("NOT_AVAILABLE");
   if (!enabledResolutions(gallery).includes(data.resolution)) throw new Error("NOT_AVAILABLE");
 
-  const hasWatermarks = (await listWatermarks(db, gallery.studioId)).length > 0;
+  const hasWatermarks = !!gallery.watermarkId;
   const mode = effectiveWatermarkMode(photo, section, { watermarkMode: gallery.watermarkMode, hasWatermarks });
   const key = downloadKey(photo, mode, data.resolution);
   if (!key) throw new Error("NOT_AVAILABLE");
@@ -175,7 +174,7 @@ export async function zipRequestAction(
     candidates = candidates.filter((p) => liked.has(p.id));
   }
 
-  const hasWatermarks = (await listWatermarks(db, gallery.studioId)).length > 0;
+  const hasWatermarks = !!gallery.watermarkId;
   const watermarkGallery = { watermarkMode: gallery.watermarkMode, hasWatermarks };
   const entries: { key: string; name: string }[] = [];
   for (const photo of candidates) {

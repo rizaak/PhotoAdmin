@@ -38,7 +38,10 @@ export default async function SettingsPage() {
             save: tw("save"), delete: tw("delete"), saved: tw("saved"),
             incomplete: tw("incomplete"), error: tw("error"),
           }}
-          previewLabels={{ preview: tw("preview"), previewLoading: tw("previewLoading"), previewError: tw("previewError") }}
+          previewLabels={{
+            preview: tw("preview"), previewLoading: tw("previewLoading"), previewError: tw("previewError"),
+            previewPick: tw("previewPick"),
+          }}
         />
       </section>
     </div>

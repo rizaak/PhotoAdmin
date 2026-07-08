@@ -4,7 +4,6 @@ import { db } from "@/db";
 import { getClientGalleryData, getPublicGallery } from "@/server/client-access";
 import { getOptionalClientSession } from "@/server/client-auth";
 import { presignDownload } from "@/server/storage";
-import { listWatermarks } from "@/server/watermarks";
 import {
   clientViewPhotos, effectiveWatermarkMode, effectiveDownloadEnabled, enabledResolutions, downloadKey,
 } from "@/server/delivery";
@@ -41,7 +40,7 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
   }
 
   const data = await getClientGalleryData(db, session.gallery.id, session.clientId);
-  const hasWatermarks = (await listWatermarks(db, data.gallery.studioId)).length > 0;
+  const hasWatermarks = !!data.gallery.watermarkId;
   const watermarkGallery = { watermarkMode: data.gallery.watermarkMode, hasWatermarks };
   const viewList = clientViewPhotos(data.photos, data.sections, watermarkGallery);
   const byId = new Map(data.photos.map((p) => [p.id, p]));

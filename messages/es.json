@@ -7,8 +7,8 @@
     "title": "Configuración",
     "watermarks": {
       "title": "Marcas de agua",
-      "intro": "Hasta 3 marcas que se aplican a todas tus galerías con marca activa.",
-      "regenNote": "Al guardar cambios, las fotos existentes necesitarán actualizarse — verás el banner \"Actualizar fotos\" en cada galería.",
+      "intro": "Configura hasta 3 marcas de agua; cada galería elige cuál usar (o ninguna).",
+      "regenNote": "Las galerías que usan esta marca necesitarán regenerar sus fotos — verás el banner en cada una.",
       "add": "+ Agregar marca",
       "slot": "Marca {n}",
       "typeText": "Texto",
@@ -29,7 +29,8 @@
       "error": "No se pudo guardar. Inténtalo de nuevo.",
       "preview": "Vista previa",
       "previewLoading": "Generando vista previa…",
-      "previewError": "No se pudo generar la vista previa."
+      "previewError": "No se pudo generar la vista previa.",
+      "previewPick": "Previsualizar marca"
     }
   },
   "galleries": {
@@ -59,6 +60,20 @@
     "watermarks": { "none": "Sin marca", "view": "En vista", "download": "En descarga", "both": "Ambas" },
     "watermarkHint": "Las marcas se configuran en",
     "watermarkHintLink": "Configuración →",
+    "watermark": "Marca de agua",
+    "watermarkNone": "Sin marca",
+    "placements": {
+      "tl": "arriba izq.",
+      "tc": "arriba centro",
+      "tr": "arriba der.",
+      "ml": "centro izq.",
+      "center": "centro",
+      "mr": "centro der.",
+      "bl": "abajo izq.",
+      "bc": "abajo centro",
+      "br": "abajo der.",
+      "tile": "mosaico"
+    },
     "overrides": {
       "inherit": "Heredar",
       "watermark": "Marca",

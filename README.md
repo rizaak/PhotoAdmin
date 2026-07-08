@@ -42,8 +42,8 @@ En producción, agregar el dominio de la app a `AllowedOrigins`.
 ## Marca de agua y descargas
 
 - Las marcas de agua se configuran en **Configuración** (`/admin/settings`): hasta 3 marcas
-  simultáneas, cada una texto o PNG con su opacidad, tamaño (% del ancho) y posición
-  (esquinas/bordes/centro o mosaico), con vista previa del render real.
+  (texto o PNG con opacidad, tamaño y posición) como catálogo del estudio; **cada galería
+  elige cuál usar** (o ninguna) en su configuración.
 - La galería/sección/foto siguen decidiendo CUÁNDO aplica (modo vista/descarga/ambas).
 - Cualquier cambio en el set requiere regenerar: usa el banner "Actualizar fotos" en cada galería.
 - La resolución Original se desactiva automáticamente cuando la marca aplica a descargas.

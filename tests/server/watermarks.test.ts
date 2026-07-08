@@ -1,14 +1,30 @@
 import { describe, it, expect } from "vitest";
 import { eq } from "drizzle-orm";
+import type { Db } from "@/db";
 import { createTestDb, seedStudio } from "../helpers/db";
-import { createGallery } from "@/server/galleries";
-import { photos } from "@/db/schema";
-import { listWatermarks, saveWatermark, deleteWatermark } from "@/server/watermarks";
+import { createGallery, updateGallerySettings } from "@/server/galleries";
+import { photos, galleries } from "@/db/schema";
+import { listWatermarks, saveWatermark, deleteWatermark, type WatermarkInput } from "@/server/watermarks";
 
 const textInput = (slot = 0) => ({
   slot, type: "text" as const, text: "© Isaac", imageKey: null,
   opacityPct: 35, sizePct: 15, placement: "tile" as const,
 });
+
+const mark = (overrides: Partial<WatermarkInput> = {}): WatermarkInput => ({
+  ...textInput(overrides.slot ?? 0), ...overrides,
+});
+
+const WM_KEYS = { thumbWmKey: "t-wm", webWmKey: "w-wm", highWmKey: "h-wm" };
+
+async function seedGalleryWithPhoto(db: Db, studioId: string, title: string) {
+  const gallery = await createGallery(db, studioId, { title });
+  const [photo] = await db.insert(photos).values({
+    galleryId: gallery.id, filename: "a.jpg", originalKey: `studios/${studioId}/${gallery.id}/x/original.jpg`,
+    status: "ready", ...WM_KEYS,
+  }).returning();
+  return { gallery, photo };
+}
 
 describe("watermarks domain", () => {
   it("saves, lists ordered by slot, and upserts in place", async () => {
@@ -59,28 +75,6 @@ describe("watermarks domain", () => {
     expect(second.replacedImageKey).toBe(goodKey);
   });
 
-  it("invalidates all studio wm keys on save and delete", async () => {
-    const db = await createTestDb();
-    const studio = await seedStudio(db);
-    const g = await createGallery(db, studio.id, { title: "Boda" });
-    const [p] = await db.insert(photos).values({
-      galleryId: g.id, filename: "a.jpg", originalKey: "k/orig-a.jpg",
-      thumbWmKey: "k/thumb-wm.jpg", webWmKey: "k/web-wm.jpg", highWmKey: "k/high-wm.jpg",
-    }).returning();
-
-    await saveWatermark(db, studio.id, textInput(0));
-    let [after] = await db.select().from(photos).where(eq(photos.id, p.id));
-    expect(after.webWmKey).toBeNull();
-    expect(after.thumbWmKey).toBeNull();
-    expect(after.highWmKey).toBeNull();
-
-    await db.update(photos).set({ webWmKey: "k/web-wm.jpg" }).where(eq(photos.id, p.id));
-    await deleteWatermark(db, studio.id, 0);
-    [after] = await db.select().from(photos).where(eq(photos.id, p.id));
-    expect(after.webWmKey).toBeNull();
-    await expect(deleteWatermark(db, studio.id, 0)).rejects.toThrow("NOT_FOUND");
-  });
-
   it("is tenant-scoped", async () => {
     const db = await createTestDb();
     const a = await seedStudio(db, "auth0|wm-a");
@@ -90,33 +84,70 @@ describe("watermarks domain", () => {
     await expect(deleteWatermark(db, b.id, 0)).rejects.toThrow("NOT_FOUND");
   });
 
-  it("isolates photo wm key invalidation to the modified studio", async () => {
+  it("re-saving a mark clears wm keys only in galleries that selected it", async () => {
+    const db = await createTestDb();
+    const studio = await seedStudio(db);
+    const { watermark: m0 } = await saveWatermark(db, studio.id, mark({ slot: 0 }));
+    const { watermark: m1 } = await saveWatermark(db, studio.id, mark({ slot: 1, text: "otra" }));
+    const a = await seedGalleryWithPhoto(db, studio.id, "usa m0");
+    const b = await seedGalleryWithPhoto(db, studio.id, "usa m1");
+    await updateGallerySettings(db, studio.id, a.gallery.id, { watermarkId: m0.id });
+    await updateGallerySettings(db, studio.id, b.gallery.id, { watermarkId: m1.id });
+    // reponer claves (la selección las limpió)
+    await db.update(photos).set(WM_KEYS);
+
+    await saveWatermark(db, studio.id, mark({ slot: 0, text: "editada" }));
+
+    const [pa] = await db.select().from(photos).where(eq(photos.id, a.photo.id));
+    const [pb] = await db.select().from(photos).where(eq(photos.id, b.photo.id));
+    expect(pa.webWmKey).toBeNull();
+    expect(pb.webWmKey).toBe("w-wm");
+  });
+
+  it("creating a brand-new mark clears nothing", async () => {
+    const db = await createTestDb();
+    const studio = await seedStudio(db);
+    const a = await seedGalleryWithPhoto(db, studio.id, "g");
+    await saveWatermark(db, studio.id, mark({ slot: 2 }));
+    const [pa] = await db.select().from(photos).where(eq(photos.id, a.photo.id));
+    expect(pa.webWmKey).toBe("w-wm");
+  });
+
+  it("deleting a mark clears selectors' wm keys and nulls their selection", async () => {
+    const db = await createTestDb();
+    const studio = await seedStudio(db);
+    const { watermark: m0 } = await saveWatermark(db, studio.id, mark({ slot: 0 }));
+    const a = await seedGalleryWithPhoto(db, studio.id, "usa m0");
+    await updateGallerySettings(db, studio.id, a.gallery.id, { watermarkId: m0.id });
+    await db.update(photos).set(WM_KEYS);
+
+    await deleteWatermark(db, studio.id, 0);
+
+    const [ga] = await db.select().from(galleries).where(eq(galleries.id, a.gallery.id));
+    const [pa] = await db.select().from(photos).where(eq(photos.id, a.photo.id));
+    expect(ga.watermarkId).toBeNull();
+    expect(pa.webWmKey).toBeNull();
+  });
+
+  it("isolates photo wm key invalidation to another studio's selecting gallery", async () => {
     const db = await createTestDb();
     const studioA = await seedStudio(db, "auth0|wm-a");
     const studioB = await seedStudio(db, "auth0|wm-b");
 
-    const gaA = await createGallery(db, studioA.id, { title: "Boda A" });
-    const [photoA] = await db.insert(photos).values({
-      galleryId: gaA.id, filename: "a.jpg", originalKey: "k/orig-a.jpg",
-      thumbWmKey: "k/thumb-wm-a.jpg", webWmKey: "k/web-wm-a.jpg", highWmKey: "k/high-wm-a.jpg",
-    }).returning();
+    const { watermark: mA } = await saveWatermark(db, studioA.id, mark({ slot: 0 }));
+    const { watermark: mB } = await saveWatermark(db, studioB.id, mark({ slot: 0 }));
+    const a = await seedGalleryWithPhoto(db, studioA.id, "Boda A");
+    const b = await seedGalleryWithPhoto(db, studioB.id, "Boda B");
+    await updateGallerySettings(db, studioA.id, a.gallery.id, { watermarkId: mA.id });
+    await updateGallerySettings(db, studioB.id, b.gallery.id, { watermarkId: mB.id });
+    await db.update(photos).set(WM_KEYS);
 
-    const gaB = await createGallery(db, studioB.id, { title: "Boda B" });
-    const [photoB] = await db.insert(photos).values({
-      galleryId: gaB.id, filename: "b.jpg", originalKey: "k/orig-b.jpg",
-      thumbWmKey: "k/thumb-wm-b.jpg", webWmKey: "k/web-wm-b.jpg", highWmKey: "k/high-wm-b.jpg",
-    }).returning();
+    await saveWatermark(db, studioA.id, mark({ slot: 0, text: "editada" }));
 
-    await saveWatermark(db, studioA.id, textInput(0));
-
-    const [afterA] = await db.select().from(photos).where(eq(photos.id, photoA.id));
+    const [afterA] = await db.select().from(photos).where(eq(photos.id, a.photo.id));
     expect(afterA.webWmKey).toBeNull();
-    expect(afterA.thumbWmKey).toBeNull();
-    expect(afterA.highWmKey).toBeNull();
 
-    const [afterB] = await db.select().from(photos).where(eq(photos.id, photoB.id));
-    expect(afterB.webWmKey).toBe("k/web-wm-b.jpg");
-    expect(afterB.thumbWmKey).toBe("k/thumb-wm-b.jpg");
-    expect(afterB.highWmKey).toBe("k/high-wm-b.jpg");
+    const [afterB] = await db.select().from(photos).where(eq(photos.id, b.photo.id));
+    expect(afterB.webWmKey).toBe("w-wm");
   });
 });
