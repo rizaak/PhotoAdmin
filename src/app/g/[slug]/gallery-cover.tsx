@@ -38,7 +38,19 @@ export function GalleryCover({
     );
   }
 
-  // ponytail: "banner" renders like "overlay" for now (own half-height layout lands in Task 3).
+  if (style === "banner") {
+    return (
+      <header style={{ background: pt.bg }}>
+        <div className="relative h-[50vh] min-h-56 overflow-hidden">{img}</div>
+        <motion.div {...fade} className="flex flex-col items-center px-8 py-10 text-center">
+          <h1 className="text-4xl md:text-5xl" style={{ ...titleStyle, color: pt.text }}>{title}</h1>
+          <div className="mt-5 h-px w-14" style={{ background: pt.accent }} />
+        </motion.div>
+      </header>
+    );
+  }
+
+  // "overlay" (unifica los antiguos lowline/warm): degradado hacia pt.bg, título abajo-izquierda.
   const overlay = style === "full"
     ? "linear-gradient(to top, rgba(0,0,0,.45), rgba(0,0,0,.12))"
     : `linear-gradient(to top, ${pt.bg} 4%, transparent 55%)`;
