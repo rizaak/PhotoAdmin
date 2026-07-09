@@ -4,10 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { PALETTE_TOKENS, FONT_TOKENS, type GalleryDesign } from "./design-options";
 import { fontVariables } from "./fonts";
 import { GalleryCover } from "./gallery-cover";
-import { GalleryHeader } from "./gallery-header";
+import { TitleBar } from "./title-bar";
 import { PhotoGrid } from "./photo-grid";
 import { Lightbox } from "./lightbox";
-import { IconDownload } from "./icons";
 import {
   toggleLikeAction, addCommentAction, downloadPhotoAction, zipRequestAction,
 } from "./actions";
@@ -31,6 +30,7 @@ type Labels = {
   like: string; unlike: string; comments: string; commentPlaceholder: string;
   send: string; empty: string; yourActivity: string; actionError: string;
   download: string; resolutions: Record<Res, string>;
+  favorites: string; noFavorites: string;
   downloadGallery: string; downloadFavorites: string; downloadSection: string;
   zipError: string; zipUnavailable: string;
   close: string; prev: string; next: string;
@@ -42,7 +42,7 @@ export function ClientGallery({
 }: {
   slug: string; title: string; design: GalleryDesign;
   coverUrl: string | null; coverFocalX: number; coverFocalY: number;
-  sections: { id: string | null; name: string | null }[];
+  sections: { id: string; name: string }[];
   photos: ClientPhoto[]; labels: Labels;
   zip: { enabled: boolean; resolutions: Res[] };
 }) {
@@ -55,6 +55,8 @@ export function ClientGallery({
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [zipResolution, setZipResolution] = useState<Res>(zip.resolutions[0] ?? "web");
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(sections[0]?.id ?? null);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
 
   useEffect(() => {
     if (!notice) return;
@@ -76,10 +78,7 @@ export function ClientGallery({
     window.location.assign(url);
   }
 
-  async function onZip(
-    scope: { type: "gallery" | "favorites" } | { type: "section"; sectionId: string },
-    zipResolution: Res,
-  ) {
+  async function onZip(scope: { type: "gallery" | "favorites" } | { type: "section"; sectionId: string }) {
     try {
       const { url } = await zipRequestAction({ slug, scope, resolution: zipResolution });
       window.location.assign(url);
@@ -102,58 +101,42 @@ export function ClientGallery({
     }
   }
 
-  const bySection = sections
-    .map((s) => ({ ...s, photos: photos.filter((p) => p.sectionId === s.id) }))
-    .filter((s) => s.photos.length > 0);
-  const flatPhotos = bySection.flatMap((s) => s.photos);
+  const visible = photos.filter((p) =>
+    p.sectionId === activeSectionId && (!favoritesOnly || p.liked));
 
   return (
     <main className={fontVariables} style={{ background: pt.bg, color: pt.text, fontFamily: ft.body }}>
       <GalleryCover design={design} title={title} coverUrl={coverUrl} focalX={coverFocalX} focalY={coverFocalY} />
       <div ref={sentinelRef} className="absolute top-[60vh]" />
-      <GalleryHeader
-        design={design} title={title} sentinel={sentinelRef} zip={zip}
-        resolution={zipResolution} onResolutionChange={setZipResolution}
-        onZip={(scope, res) => void onZip(scope, res)}
+      <TitleBar
+        design={design} title={title} sections={sections}
+        activeSectionId={activeSectionId} onSelectSection={setActiveSectionId}
+        favoritesOnly={favoritesOnly} onToggleFavorites={() => setFavoritesOnly((v) => !v)}
+        zip={zip} zipResolution={zipResolution} onZipResolution={setZipResolution}
+        onZip={(scope) => void onZip(scope)}
+        sentinel={sentinelRef}
         labels={{
-          downloadGallery: labels.downloadGallery, downloadFavorites: labels.downloadFavorites,
+          favorites: labels.favorites, downloadGallery: labels.downloadGallery,
+          downloadFavorites: labels.downloadFavorites, downloadSection: labels.downloadSection,
           resolutions: labels.resolutions,
         }}
       />
 
       <p className="mx-auto max-w-6xl px-4 pt-10 text-xs opacity-60">{labels.yourActivity}</p>
 
-      {photos.length === 0 && <p className="p-10 text-center text-sm opacity-60">{labels.empty}</p>}
+      {sections.length === 0 && photos.length === 0 && (
+        <p className="p-10 text-center text-sm opacity-60">{labels.empty}</p>
+      )}
+      {favoritesOnly && visible.length === 0 && (
+        <p className="p-16 text-center text-sm" style={{ color: pt.muted }}>{labels.noFavorites}</p>
+      )}
 
-      <div className="mx-auto max-w-6xl space-y-10 p-4">
-        {bySection.map((s) => (
-          <section key={s.id ?? "none"}>
-            {s.name && (
-              <h2
-                className="mb-3 flex items-center gap-2 text-2xl"
-                style={{ fontFamily: ft.display, fontWeight: ft.displayWeight, fontStyle: ft.displayStyle,
-                  textTransform: ft.displayTransform, letterSpacing: ft.displayTracking }}
-              >
-                {s.name}
-                {zip.enabled && zip.resolutions.length > 0 && s.id && (
-                  <button
-                    title={labels.downloadSection}
-                    aria-label={labels.downloadSection}
-                    onClick={() => void onZip({ type: "section", sectionId: s.id! }, zipResolution)}
-                    className="opacity-60 hover:opacity-100"
-                  >
-                    <IconDownload className="h-4 w-4" />
-                  </button>
-                )}
-              </h2>
-            )}
-            <PhotoGrid
-              design={design} photos={s.photos} onOpen={(p) => setOpenId(p.id)}
-              onToggleLike={(p) => void onToggleLike(p)}
-              likeLabel={labels.like} unlikeLabel={labels.unlike}
-            />
-          </section>
-        ))}
+      <div className="mx-auto max-w-6xl p-4">
+        <PhotoGrid
+          design={design} photos={visible} onOpen={(p) => setOpenId(p.id)}
+          onToggleLike={(p) => void onToggleLike(p)}
+          likeLabel={labels.like} unlikeLabel={labels.unlike}
+        />
       </div>
 
       {notice && (
@@ -166,7 +149,7 @@ export function ClientGallery({
       )}
 
       <Lightbox
-        photos={flatPhotos} openId={openId} busy={busy} labels={labels}
+        photos={visible} openId={openId} busy={busy} labels={labels}
         onClose={() => setOpenId(null)} onNavigate={setOpenId}
         onToggleLike={onToggleLike} onDownload={onDownload} onComment={onComment}
       />

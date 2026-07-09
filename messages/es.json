@@ -178,6 +178,8 @@
     "actionError": "No se pudo guardar. Recarga la página e inténtalo de nuevo.",
     "download": "Descargar",
     "resolutions": { "web": "Web", "high": "Alta resolución", "original": "Original" },
+    "favorites": "Favoritas",
+    "noFavorites": "Aún no tienes favoritas",
     "downloadGallery": "Descargar galería",
     "downloadFavorites": "Descargar mis favoritas",
     "downloadSection": "Descargar esta sección",

@@ -103,10 +103,7 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
   );
   const cover = viewList.find((v) => v.id === data.gallery.coverPhotoId);
   const coverUrl = cover ? await presignDownload(cover.webKey) : null;
-  const sectionBlocks: { id: string | null; name: string | null }[] = [
-    { id: null, name: null },
-    ...data.sections.map((s) => ({ id: s.id, name: s.name })),
-  ];
+  const sectionBlocks = data.sections.map((s) => ({ id: s.id, name: s.name }));
   const zip = {
     enabled: photoViews.some((p) => p.downloads.length > 0),
     resolutions: enabledResolutions(data.gallery),
@@ -129,6 +126,7 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
         empty: t("empty"), yourActivity: t("yourActivity"), actionError: t("actionError"),
         download: t("download"),
         resolutions: { web: t("resolutions.web"), high: t("resolutions.high"), original: t("resolutions.original") },
+        favorites: t("favorites"), noFavorites: t("noFavorites"),
         downloadGallery: t("downloadGallery"), downloadFavorites: t("downloadFavorites"),
         downloadSection: t("downloadSection"), zipError: t("zipError"), zipUnavailable: t("zipUnavailable"),
         close: t("close"), prev: t("prev"), next: t("next"),

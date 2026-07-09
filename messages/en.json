@@ -178,6 +178,8 @@
     "actionError": "Could not save. Reload the page and try again.",
     "download": "Download",
     "resolutions": { "web": "Web", "high": "High resolution", "original": "Original" },
+    "favorites": "Favorites",
+    "noFavorites": "No favorites yet",
     "downloadGallery": "Download gallery",
     "downloadFavorites": "Download my favorites",
     "downloadSection": "Download this section",
