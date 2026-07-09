@@ -2,19 +2,24 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { db } from "@/db";
+import type { CoverStyle, FontSet, Palette, GridStyle } from "@/db/schema";
 import { requireStudio } from "@/server/auth";
 import { getGallery } from "@/server/galleries";
 import { listSections } from "@/server/sections";
 import { listGalleryPhotos } from "@/server/photos";
 import { presignDownload } from "@/server/storage";
 import { listWatermarks } from "@/server/watermarks";
+import { pickCoverSource } from "@/server/cover";
 import {
   updateGalleryAction, addSectionAction, renameSectionAction,
-  toggleSectionAction, moveSectionAction, deleteSectionAction, setSectionOverridesAction,
+  toggleSectionAction, moveSectionAction, setSectionOverridesAction,
 } from "./actions";
+import { ShareLinks } from "./share-links";
 import { PhotoUploader } from "./photo-uploader";
 import { PhotoManager, type PhotoView } from "./photo-manager";
 import { ReprocessPhotos } from "./reprocess-photos";
+import { DeleteSection } from "./delete-section";
+import { DesignSection } from "./design-section";
 
 export default async function GalleryDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -40,9 +45,25 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
       webUrl: p.webKey ? await presignDownload(p.webKey) : null,
     })),
   );
+  const photoCountBySection = new Map<string, number>();
+  for (const p of photoRows) {
+    photoCountBySection.set(p.sectionId, (photoCountBySection.get(p.sectionId) ?? 0) + 1);
+  }
   const tp = await getTranslations("galleryDetail.photos");
   const tu = await getTranslations("galleryDetail.upload");
+  const td = await getTranslations("galleryDetail.design");
   const studioMarks = await listWatermarks(db, studio.id);
+
+  // Preview de portada para el admin: misma prioridad que el cliente (subida > foto elegida
+  // > primera elegible), pero sobre TODAS las fotos de la galería (secciones ocultas incluidas)
+  // ya que aquí el estudio está gestionando el contenido, no viéndolo como cliente.
+  const coverSource = pickCoverSource(gallery, photoRows);
+  let coverThumbUrl: string | null = null;
+  if (coverSource?.type === "upload") {
+    coverThumbUrl = await presignDownload(coverSource.key);
+  } else if (coverSource?.type === "photo" && coverSource.photo.thumbKey) {
+    coverThumbUrl = await presignDownload(coverSource.photo.thumbKey);
+  }
   const hasWatermarks = !!gallery.watermarkId;
   const pendingReprocess = photoRows
     .filter((p) =>
@@ -60,8 +81,12 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
     <div className="space-y-10">
       <div>
         <h1 className="text-2xl font-semibold">{gallery.title}</h1>
-        <p className="text-sm text-neutral-500">
-          {t("shareLink")}: <code className="rounded bg-neutral-100 px-1">/g/{gallery.slug}</code>
+        <p className="flex items-center gap-2 text-sm text-neutral-500">
+          {t("shareLink")}:
+          <ShareLinks
+            slug={gallery.slug}
+            labels={{ preview: t("share.preview"), copy: t("share.copy"), copied: t("share.copied") }}
+          />
         </p>
         <Link href={`/admin/galleries/${gallery.id}/activity`} className="text-sm text-neutral-500 hover:underline">
           {tActivity("title")} →
@@ -88,15 +113,6 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
               <option value="draft">{tg("status.draft")}</option>
               <option value="published">{tg("status.published")}</option>
               <option value="archived">{tg("status.archived")}</option>
-            </select>
-          </label>
-          <label className="flex flex-col gap-1">
-            {t("template")}
-            <select name="coverTemplate" defaultValue={gallery.coverTemplate} className={input}>
-              <option value="editorial">{t("templates.editorial")}</option>
-              <option value="cinematico">{t("templates.cinematico")}</option>
-              <option value="luminoso">{t("templates.luminoso")}</option>
-              <option value="clasico">{t("templates.clasico")}</option>
             </select>
           </label>
           <label className="flex flex-col gap-1">
@@ -165,6 +181,45 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
         </form>
       </section>
 
+      <DesignSection
+        galleryId={gallery.id}
+        design={{
+          coverStyle: gallery.coverStyle as CoverStyle, fontSet: gallery.fontSet as FontSet,
+          palette: gallery.palette as Palette, gridStyle: gallery.gridStyle as GridStyle,
+        }}
+        focal={{ x: gallery.coverFocalX, y: gallery.coverFocalY }}
+        coverThumbUrl={coverThumbUrl}
+        labels={{
+          title: td("title"),
+          groups: {
+            coverStyle: td("groups.coverStyle"), fontSet: td("groups.fontSet"),
+            palette: td("groups.palette"), gridStyle: td("groups.gridStyle"),
+          },
+          coverStyleNames: {
+            full: td("coverStyle.full"), overlay: td("coverStyle.overlay"),
+            split: td("coverStyle.split"), banner: td("coverStyle.banner"),
+          },
+          fontSetNames: {
+            elegante: td("fontSet.elegante"), dramatica: td("fontSet.dramatica"),
+            amable: td("fontSet.amable"), clasica: td("fontSet.clasica"),
+          },
+          paletteNames: {
+            blanco: td("palette.blanco"), marfil: td("palette.marfil"), calido: td("palette.calido"),
+            carbon: td("palette.carbon"), noche: td("palette.noche"),
+          },
+          gridStyleNames: {
+            justificada: td("gridStyle.justificada"), aireada: td("gridStyle.aireada"),
+            cuadrada: td("gridStyle.cuadrada"),
+          },
+          focalHint: td("focalHint"),
+          upload: td("upload"),
+          remove: td("remove"),
+          save: td("save"),
+          saved: td("saved"),
+          error: tp("actionError"),
+        }}
+      />
+
       <section className="rounded border bg-white p-4">
         <h2 className="mb-4 font-medium">{t("sections")}</h2>
         <ul className="mb-4 divide-y">
@@ -202,11 +257,16 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
                   {s.visible ? t("hide") : t("show")}
                 </button>
               </form>
-              <form action={deleteSectionAction}>
-                <input type="hidden" name="galleryId" value={gallery.id} />
-                <input type="hidden" name="sectionId" value={s.id} />
-                <button className="text-red-600 hover:underline">{t("delete")}</button>
-              </form>
+              <DeleteSection
+                galleryId={gallery.id}
+                sectionId={s.id}
+                photoCount={photoCountBySection.get(s.id) ?? 0}
+                otherSections={sectionList.filter((x) => x.id !== s.id).map((x) => ({ id: x.id, name: x.name }))}
+                labels={{
+                  delete: t("delete"), deleteMoveTo: t("deleteMoveTo"),
+                  deleteConfirmMove: t("deleteConfirmMove"), deleteBlocked: t("deleteBlocked"),
+                }}
+              />
               <form action={setSectionOverridesAction} className="flex items-center gap-1 text-xs">
                 <input type="hidden" name="galleryId" value={gallery.id} />
                 <input type="hidden" name="sectionId" value={s.id} />
@@ -251,7 +311,7 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
             galleryId={gallery.id}
             sections={sectionList.map((s) => ({ id: s.id, name: s.name }))}
             labels={{
-              hint: tu("hint"), select: tu("select"), target: tu("target"), noSection: tu("noSection"),
+              hint: tu("hint"), select: tu("select"), target: tu("target"), needSection: tu("needSection"),
               uploading: tu("uploading"), processing: tu("processing"), done: tu("done"), error: tu("error"),
             }}
           />
@@ -264,7 +324,7 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
           labels={{
             // selected/deleteConfirm son plantillas con {count} que el cliente
             // interpola; tp() validaría las variables ICU y fallaría sin count.
-            empty: tp("empty"), noSection: tp("noSection"), selected: tp.raw("selected") as string,
+            empty: tp("empty"), selected: tp.raw("selected") as string,
             moveTo: tp("moveTo"), move: tp("move"), publish: tp("publish"), hide: tp("hide"),
             delete: tp("delete"), deleteConfirm: tp.raw("deleteConfirm") as string, setCover: tp("setCover"),
             hiddenBadge: tp("hiddenBadge"), processingBadge: tp("processingBadge"),

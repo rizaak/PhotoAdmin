@@ -57,6 +57,13 @@
       "when": 1783525178613,
       "tag": "0007_gallery_template_default",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783552409187,
+      "tag": "0008_gallery_design_axes",
+      "breakpoints": true
     }
   ]
 }

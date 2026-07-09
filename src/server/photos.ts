@@ -11,7 +11,7 @@ const registerSchema = z.object({
   filename: z.string().trim().min(1).max(200),
   size: z.number().int().positive().max(MAX_UPLOAD_BYTES),
   contentType: z.enum(["image/jpeg", "image/png", "image/webp"]),
-  sectionId: z.string().uuid().nullable().optional(),
+  sectionId: z.string().uuid(),
 });
 export type RegisterUploadInput = z.infer<typeof registerSchema>;
 
@@ -31,14 +31,14 @@ export async function registerUpload(
 ): Promise<Photo> {
   const data = registerSchema.parse(input);
   await getGallery(db, studioId, galleryId);
-  if (data.sectionId) await assertSectionInGallery(db, galleryId, data.sectionId);
+  await assertSectionInGallery(db, galleryId, data.sectionId);
 
   const id = randomUUID();
   const filename = sanitizeFilename(data.filename);
   const [photo] = await db.insert(photos).values({
     id,
     galleryId,
-    sectionId: data.sectionId ?? null,
+    sectionId: data.sectionId,
     filename,
     originalKey: `studios/${studioId}/galleries/${galleryId}/${id}/orig-${filename}`,
     sizeOriginalBytes: data.size,
@@ -109,11 +109,11 @@ async function assertPhotosInGallery(db: Db, studioId: string, galleryId: string
 }
 
 export async function movePhotos(
-  db: Db, studioId: string, galleryId: string, photoIds: string[], sectionId: string | null,
+  db: Db, studioId: string, galleryId: string, photoIds: string[], sectionId: string,
 ): Promise<void> {
   const ids = idList.parse(photoIds);
   await assertPhotosInGallery(db, studioId, galleryId, ids);
-  if (sectionId) await assertSectionInGallery(db, galleryId, sectionId);
+  await assertSectionInGallery(db, galleryId, sectionId);
   await db.update(photos).set({ sectionId })
     .where(and(inArray(photos.id, ids), eq(photos.galleryId, galleryId)));
 }

@@ -1,7 +1,7 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "@/db";
-import { galleries, sections, type Section } from "@/db/schema";
+import { galleries, photos, sections, type Section } from "@/db/schema";
 import { getGallery } from "./galleries";
 
 const nameSchema = z.string().trim().min(1).max(100);
@@ -95,8 +95,21 @@ export async function reorderSections(db: Db, studioId: string, galleryId: strin
   });
 }
 
-export async function deleteSection(db: Db, studioId: string, sectionId: string): Promise<void> {
-  await assertSectionOwnership(db, studioId, sectionId);
-  // FK photos.section_id ON DELETE SET NULL deja las fotos "sin sección"
-  await db.delete(sections).where(eq(sections.id, sectionId));
+export async function deleteSection(
+  db: Db, studioId: string, sectionId: string, moveToSectionId?: string,
+): Promise<void> {
+  const row = await assertSectionOwnership(db, studioId, sectionId);
+  await db.transaction(async (tx) => {
+    const [{ count }] = await tx.select({ count: sql<number>`count(*)::int` })
+      .from(photos).where(eq(photos.sectionId, sectionId));
+    if (count > 0) {
+      if (!moveToSectionId) throw new Error("SECTION_NOT_EMPTY");
+      if (moveToSectionId === sectionId) throw new Error("INVALID_TARGET");
+      const [target] = await tx.select({ id: sections.id }).from(sections)
+        .where(and(eq(sections.id, moveToSectionId), eq(sections.galleryId, row.galleryId)));
+      if (!target) throw new Error("INVALID_TARGET");
+      await tx.update(photos).set({ sectionId: moveToSectionId }).where(eq(photos.sectionId, sectionId));
+    }
+    await tx.delete(sections).where(eq(sections.id, sectionId));
+  });
 }

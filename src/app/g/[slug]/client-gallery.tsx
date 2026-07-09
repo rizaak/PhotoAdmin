@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { GalleryTemplate } from "@/db/schema";
-import { TEMPLATE_TOKENS } from "./templates";
+import { PALETTE_TOKENS, FONT_TOKENS, type GalleryDesign } from "./design-options";
 import { fontVariables } from "./fonts";
 import { GalleryCover } from "./gallery-cover";
-import { GalleryHeader } from "./gallery-header";
+import { TitleBar } from "./title-bar";
 import { PhotoGrid } from "./photo-grid";
 import { Lightbox } from "./lightbox";
-import { IconDownload } from "./icons";
 import {
   toggleLikeAction, addCommentAction, downloadPhotoAction, zipRequestAction,
 } from "./actions";
@@ -32,22 +30,29 @@ type Labels = {
   like: string; unlike: string; comments: string; commentPlaceholder: string;
   send: string; empty: string; yourActivity: string; actionError: string;
   download: string; resolutions: Record<Res, string>;
+  favorites: string; noFavorites: string;
   downloadGallery: string; downloadFavorites: string; downloadSection: string;
   zipError: string; zipUnavailable: string;
   close: string; prev: string; next: string;
+  // Solo se usan en modo preview (fotógrafo revisando su propia galería).
+  previewBanner?: string; previewOnly?: string;
 };
 
 export function ClientGallery({
-  slug, title, template, coverUrl, coverFocalX, coverFocalY,
-  sections, photos: initialPhotos, labels, zip,
+  slug, title, design, coverUrl, coverFocalX, coverFocalY,
+  sections, photos: initialPhotos, labels, zip, previewMode = false,
 }: {
-  slug: string; title: string; template: GalleryTemplate;
+  slug: string; title: string; design: GalleryDesign;
   coverUrl: string | null; coverFocalX: number; coverFocalY: number;
-  sections: { id: string | null; name: string | null }[];
+  sections: { id: string; name: string }[];
   photos: ClientPhoto[]; labels: Labels;
   zip: { enabled: boolean; resolutions: Res[] };
+  // Vista de solo lectura para el fotógrafo: like/comentario/descarga/zip nunca
+  // disparan las server actions reales, sin importar qué UI intente llamarlas.
+  previewMode?: boolean;
 }) {
-  const tk = TEMPLATE_TOKENS[template];
+  const pt = PALETTE_TOKENS[design.palette];
+  const ft = FONT_TOKENS[design.fontSet];
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const [photos, setPhotos] = useState(initialPhotos);
@@ -55,6 +60,8 @@ export function ClientGallery({
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [zipResolution, setZipResolution] = useState<Res>(zip.resolutions[0] ?? "web");
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(sections[0]?.id ?? null);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
 
   useEffect(() => {
     if (!notice) return;
@@ -63,6 +70,9 @@ export function ClientGallery({
   }, [notice]);
 
   async function onToggleLike(photo: ClientPhoto) {
+    // ponytail: guard here too, not just on the disabled buttons — no path through
+    // this component can reach the server action in preview mode.
+    if (previewMode) return;
     try {
       const { liked } = await toggleLikeAction({ slug, photoId: photo.id });
       setPhotos((prev) => prev.map((p) => (p.id === photo.id ? { ...p, liked } : p)));
@@ -72,14 +82,13 @@ export function ClientGallery({
   }
 
   async function onDownload(photo: ClientPhoto, resolution: Res) {
+    if (previewMode) return;
     const { url } = await downloadPhotoAction({ slug, photoId: photo.id, resolution });
     window.location.assign(url);
   }
 
-  async function onZip(
-    scope: { type: "gallery" | "favorites" } | { type: "section"; sectionId: string },
-    zipResolution: Res,
-  ) {
+  async function onZip(scope: { type: "gallery" | "favorites" } | { type: "section"; sectionId: string }) {
+    if (previewMode) return;
     try {
       const { url } = await zipRequestAction({ slug, scope, resolution: zipResolution });
       window.location.assign(url);
@@ -91,7 +100,7 @@ export function ClientGallery({
   }
 
   async function onComment(photo: ClientPhoto, body: string) {
-    if (!body.trim() || busy) return;
+    if (previewMode || !body.trim() || busy) return;
     setBusy(true);
     try {
       const c = await addCommentAction({ slug, photoId: photo.id, body });
@@ -102,73 +111,68 @@ export function ClientGallery({
     }
   }
 
-  const bySection = sections
-    .map((s) => ({ ...s, photos: photos.filter((p) => p.sectionId === s.id) }))
-    .filter((s) => s.photos.length > 0);
-  const flatPhotos = bySection.flatMap((s) => s.photos);
+  const visible = photos.filter((p) =>
+    p.sectionId === activeSectionId && (!favoritesOnly || p.liked));
 
   return (
-    <main className={fontVariables} style={{ background: tk.bg, color: tk.text, fontFamily: tk.body }}>
-      <GalleryCover template={template} title={title} coverUrl={coverUrl} focalX={coverFocalX} focalY={coverFocalY} />
+    <main className={`${fontVariables} ${previewMode ? "pt-9" : ""}`} style={{ background: pt.bg, color: pt.text, fontFamily: ft.body }}>
+      {previewMode && (
+        <div
+          role="status"
+          className="fixed inset-x-0 top-0 z-[70] bg-neutral-900 px-4 py-2 text-center text-xs text-white"
+        >
+          {labels.previewBanner}
+        </div>
+      )}
+      <GalleryCover design={design} title={title} coverUrl={coverUrl} focalX={coverFocalX} focalY={coverFocalY} />
       <div ref={sentinelRef} className="absolute top-[60vh]" />
-      <GalleryHeader
-        template={template} title={title} sentinel={sentinelRef} zip={zip}
-        resolution={zipResolution} onResolutionChange={setZipResolution}
-        onZip={(scope, res) => void onZip(scope, res)}
+      <TitleBar
+        design={design} title={title} sections={sections}
+        activeSectionId={activeSectionId} onSelectSection={setActiveSectionId}
+        favoritesOnly={favoritesOnly} onToggleFavorites={() => setFavoritesOnly((v) => !v)}
+        zip={zip} zipResolution={zipResolution} onZipResolution={setZipResolution}
+        onZip={(scope) => void onZip(scope)}
+        sentinel={sentinelRef}
+        previewMode={previewMode}
         labels={{
-          downloadGallery: labels.downloadGallery, downloadFavorites: labels.downloadFavorites,
-          resolutions: labels.resolutions,
+          favorites: labels.favorites, downloadGallery: labels.downloadGallery,
+          downloadFavorites: labels.downloadFavorites, downloadSection: labels.downloadSection,
+          resolutions: labels.resolutions, previewOnly: labels.previewOnly,
         }}
       />
 
       <p className="mx-auto max-w-6xl px-4 pt-10 text-xs opacity-60">{labels.yourActivity}</p>
 
-      {photos.length === 0 && <p className="p-10 text-center text-sm opacity-60">{labels.empty}</p>}
+      {sections.length === 0 && photos.length === 0 && (
+        <p className="p-10 text-center text-sm opacity-60">{labels.empty}</p>
+      )}
+      {favoritesOnly && visible.length === 0 && (
+        <p className="p-16 text-center text-sm" style={{ color: pt.muted }}>{labels.noFavorites}</p>
+      )}
 
-      <div className="mx-auto max-w-6xl space-y-10 p-4">
-        {bySection.map((s) => (
-          <section key={s.id ?? "none"}>
-            {s.name && (
-              <h2
-                className="mb-3 flex items-center gap-2 text-2xl"
-                style={{ fontFamily: tk.display, fontWeight: tk.displayWeight, fontStyle: tk.displayStyle,
-                  textTransform: tk.displayTransform, letterSpacing: tk.displayTracking }}
-              >
-                {s.name}
-                {zip.enabled && zip.resolutions.length > 0 && s.id && (
-                  <button
-                    title={labels.downloadSection}
-                    aria-label={labels.downloadSection}
-                    onClick={() => void onZip({ type: "section", sectionId: s.id! }, zipResolution)}
-                    className="opacity-60 hover:opacity-100"
-                  >
-                    <IconDownload className="h-4 w-4" />
-                  </button>
-                )}
-              </h2>
-            )}
-            <PhotoGrid
-              template={template} photos={s.photos} onOpen={(p) => setOpenId(p.id)}
-              onToggleLike={(p) => void onToggleLike(p)}
-              likeLabel={labels.like} unlikeLabel={labels.unlike}
-            />
-          </section>
-        ))}
+      <div className="mx-auto max-w-6xl p-4">
+        <PhotoGrid
+          design={design} photos={visible} onOpen={(p) => setOpenId(p.id)}
+          onToggleLike={(p) => void onToggleLike(p)}
+          likeLabel={labels.like} unlikeLabel={labels.unlike}
+          previewMode={previewMode} previewOnlyLabel={labels.previewOnly}
+        />
       </div>
 
       {notice && (
         <div
           className="fixed bottom-4 left-1/2 z-[60] -translate-x-1/2 rounded-full px-4 py-2 text-xs shadow-lg"
-          style={{ background: tk.surface, color: tk.text }}
+          style={{ background: pt.surface, color: pt.text }}
         >
           {notice}
         </div>
       )}
 
       <Lightbox
-        photos={flatPhotos} openId={openId} busy={busy} labels={labels}
+        photos={visible} openId={openId} busy={busy} labels={labels}
         onClose={() => setOpenId(null)} onNavigate={setOpenId}
         onToggleLike={onToggleLike} onDownload={onDownload} onComment={onComment}
+        previewMode={previewMode}
       />
     </main>
   );

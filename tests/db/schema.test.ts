@@ -22,9 +22,7 @@ describe("schema", () => {
     expect(section.watermarkMode).toBeNull(); // hereda
     expect(photo.published).toBe(true);
 
-    // borrar la sección deja la foto "sin sección", no la borra
-    await db.delete(sections).where(eq(sections.id, section.id));
-    const [orphan] = await db.select().from(photos).where(eq(photos.id, photo.id));
-    expect(orphan.sectionId).toBeNull();
+    // toda foto pertenece a una sección: borrar una sección con fotos está bloqueado por FK
+    await expect(db.delete(sections).where(eq(sections.id, section.id))).rejects.toThrow();
   });
 });

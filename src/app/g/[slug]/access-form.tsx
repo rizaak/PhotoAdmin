@@ -2,8 +2,7 @@
 
 import { useActionState } from "react";
 import { motion } from "motion/react";
-import type { GalleryTemplate } from "@/db/schema";
-import { TEMPLATE_TOKENS } from "./templates";
+import { PALETTE_TOKENS, FONT_TOKENS, type GalleryDesign } from "./design-options";
 import { fontVariables } from "./fonts";
 import { enterGalleryAction, type EnterState } from "./actions";
 
@@ -13,12 +12,13 @@ type Labels = {
 };
 
 export function AccessForm({
-  slug, galleryTitle, hasPassword, template, coverUrl, labels,
+  slug, galleryTitle, hasPassword, design, coverUrl, labels,
 }: {
   slug: string; galleryTitle: string; hasPassword: boolean;
-  template: GalleryTemplate; coverUrl: string | null; labels: Labels;
+  design: GalleryDesign; coverUrl: string | null; labels: Labels;
 }) {
-  const tk = TEMPLATE_TOKENS[template];
+  const pt = PALETTE_TOKENS[design.palette];
+  const ft = FONT_TOKENS[design.fontSet];
   const action = enterGalleryAction.bind(null, slug);
   const [state, formAction, pending] = useActionState<EnterState, FormData>(action, null);
 
@@ -28,7 +28,7 @@ export function AccessForm({
   return (
     <main
       className={`relative flex min-h-screen items-center justify-center overflow-hidden p-6 ${fontVariables}`}
-      style={{ background: tk.bg, color: tk.text, fontFamily: tk.body }}
+      style={{ background: pt.bg, color: pt.text, fontFamily: ft.body }}
     >
       {coverUrl && (
         // eslint-disable-next-line @next/next/no-img-element
@@ -39,15 +39,15 @@ export function AccessForm({
         action={formAction}
         initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
         className="relative w-full max-w-sm space-y-5 rounded-xl p-9 shadow-2xl backdrop-blur-md"
-        style={{ background: coverUrl ? "rgba(255,255,255,.92)" : tk.surface, color: coverUrl ? "#1f1f1f" : tk.text }}
+        style={{ background: coverUrl ? "rgba(255,255,255,.92)" : pt.surface, color: coverUrl ? "#1f1f1f" : pt.text }}
       >
-        <p className="text-xs" style={{ color: tk.accent, letterSpacing: "0.25em", textTransform: "uppercase" }}>
+        <p className="text-xs" style={{ color: pt.accent, letterSpacing: "0.25em", textTransform: "uppercase" }}>
           {labels.welcome}
         </p>
         <h1
           className="text-3xl leading-snug"
-          style={{ fontFamily: tk.display, fontWeight: tk.displayWeight, fontStyle: tk.displayStyle,
-            textTransform: tk.displayTransform, letterSpacing: tk.displayTracking }}
+          style={{ fontFamily: ft.display, fontWeight: ft.displayWeight, fontStyle: ft.displayStyle,
+            textTransform: ft.displayTransform, letterSpacing: ft.displayTracking }}
         >
           {galleryTitle}
         </h1>
@@ -60,7 +60,7 @@ export function AccessForm({
         <button
           disabled={pending}
           className="w-full rounded-full py-2.5 text-sm text-white transition-opacity disabled:opacity-50"
-          style={{ background: tk.dark ? tk.accent : "#1a1a1a" }}
+          style={{ background: pt.dark ? pt.accent : "#1a1a1a" }}
         >
           {labels.enter}
         </button>

@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Labels = {
-  hint: string; select: string; target: string; noSection: string;
+  hint: string; select: string; target: string; needSection: string;
   uploading: string; processing: string; done: string; error: string;
 };
 type ItemStatus = "pending" | "uploading" | "processing" | "done" | "error";
@@ -19,9 +19,10 @@ export function PhotoUploader({
 }) {
   const [items, setItems] = useState<Item[]>([]);
   const [busy, setBusy] = useState(false);
-  const [sectionId, setSectionId] = useState<string>("");
+  const [sectionId, setSectionId] = useState<string>(sections[0]?.id ?? "");
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const noSections = sections.length === 0;
 
   async function uploadOne(file: File, index: number) {
     const set = (status: ItemStatus) =>
@@ -35,7 +36,7 @@ export function PhotoUploader({
           filename: file.name,
           size: file.size,
           contentType: file.type,
-          sectionId: sectionId || null,
+          sectionId,
         }),
       });
       if (!res.ok) throw new Error();
@@ -58,7 +59,7 @@ export function PhotoUploader({
   }
 
   async function handleFiles(files: FileList | null) {
-    if (!files || files.length === 0 || busy) return;
+    if (!files || files.length === 0 || busy || noSections) return;
     const list = Array.from(files);
     setItems(list.map((f) => ({ name: f.name, status: "pending" })));
     setBusy(true);
@@ -89,9 +90,8 @@ export function PhotoUploader({
           value={sectionId}
           onChange={(e) => setSectionId(e.target.value)}
           className="rounded border px-2 py-1 text-sm"
-          disabled={busy}
+          disabled={busy || noSections}
         >
-          <option value="">{labels.noSection}</option>
           {sections.map((s) => (
             <option key={s.id} value={s.id}>{s.name}</option>
           ))}
@@ -103,13 +103,20 @@ export function PhotoUploader({
         onDrop={(e) => { e.preventDefault(); void handleFiles(e.dataTransfer.files); }}
         className="rounded border-2 border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-500"
       >
-        {labels.hint}{" "}
-        <button type="button" onClick={() => inputRef.current?.click()} className="text-neutral-900 underline" disabled={busy}>
-          {labels.select}
-        </button>
+        {noSections ? (
+          labels.needSection
+        ) : (
+          <>
+            {labels.hint}{" "}
+            <button type="button" onClick={() => inputRef.current?.click()} className="text-neutral-900 underline" disabled={busy}>
+              {labels.select}
+            </button>
+          </>
+        )}
         <input
           ref={inputRef} type="file" multiple accept="image/jpeg,image/png,image/webp"
           className="hidden"
+          disabled={noSections}
           onChange={(e) => {
             void handleFiles(e.target.files);
             e.target.value = "";

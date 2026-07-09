@@ -52,8 +52,6 @@
     "settings": "Settings",
     "title": "Title",
     "status": "Status",
-    "template": "Template",
-    "templates": { "editorial": "Editorial", "cinematico": "Cinematic dark", "luminoso": "Soft & bright", "clasico": "Classic elegant" },
     "photoOrder": "Photo order",
     "orders": { "capture": "Capture date", "filename": "Filename", "manual": "Manual" },
     "watermarkMode": "Watermark",
@@ -89,6 +87,11 @@
     "clearPassword": "Remove password",
     "save": "Save",
     "shareLink": "Client link",
+    "share": {
+      "preview": "Preview",
+      "copy": "Copy link",
+      "copied": "Copied ✓"
+    },
     "sections": "Sections",
     "sectionName": "Section name",
     "add": "Add",
@@ -96,13 +99,16 @@
     "up": "Up", "down": "Down",
     "show": "Show", "hide": "Hide",
     "delete": "Delete",
+    "deleteMoveTo": "Move photos to…",
+    "deleteConfirmMove": "Move & delete",
+    "deleteBlocked": "Create another section first",
     "noSections": "No sections yet.",
     "hidden": "hidden",
     "upload": {
       "hint": "Drag photos here or",
       "select": "choose files",
       "target": "Upload to",
-      "noSection": "No section",
+      "needSection": "Create a section to upload photos",
       "uploading": "Uploading…",
       "processing": "Processing…",
       "done": "Ready",
@@ -111,7 +117,6 @@
     "photos": {
       "title": "Photos",
       "empty": "No photos yet. Upload the first ones above.",
-      "noSection": "No section",
       "selected": "{count} selected",
       "moveTo": "Move to…",
       "move": "Move",
@@ -135,6 +140,24 @@
       "running": "Processing {done} of {total}…",
       "done": "Photos updated.",
       "failed": "{count} photos failed; retry."
+    },
+    "design": {
+      "title": "Design",
+      "groups": {
+        "coverStyle": "Cover style",
+        "fontSet": "Typography",
+        "palette": "Palette",
+        "gridStyle": "Grid"
+      },
+      "coverStyle": { "full": "Full screen", "overlay": "Overlay", "split": "Split", "banner": "Banner" },
+      "fontSet": { "elegante": "Elegant", "dramatica": "Dramatic", "amable": "Friendly", "clasica": "Classic" },
+      "palette": { "blanco": "White", "marfil": "Ivory", "calido": "Warm", "carbon": "Charcoal", "noche": "Night" },
+      "gridStyle": { "justificada": "Justified", "aireada": "Airy", "cuadrada": "Square" },
+      "focalHint": "Click the image to set the focal point",
+      "upload": "Upload cover image",
+      "remove": "Remove image",
+      "save": "Save design",
+      "saved": "Saved"
     }
   },
   "activity": {
@@ -178,6 +201,8 @@
     "actionError": "Could not save. Reload the page and try again.",
     "download": "Download",
     "resolutions": { "web": "Web", "high": "High resolution", "original": "Original" },
+    "favorites": "Favorites",
+    "noFavorites": "No favorites yet",
     "downloadGallery": "Download gallery",
     "downloadFavorites": "Download my favorites",
     "downloadSection": "Download this section",
@@ -185,6 +210,8 @@
     "zipUnavailable": "ZIP download is not available right now.",
     "close": "Close",
     "prev": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "previewBanner": "Preview — this is how your clients will see this gallery",
+    "previewOnly": "Available to clients only"
   }
 }

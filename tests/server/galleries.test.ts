@@ -3,8 +3,9 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { createTestDb, seedStudio } from "../helpers/db";
 import {
-  createGallery, listGalleries, getGallery, updateGallerySettings, deleteGallery,
+  createGallery, listGalleries, getGallery, updateGallerySettings, updateGalleryDesign, deleteGallery,
 } from "@/server/galleries";
+import { createSection } from "@/server/sections";
 import { saveWatermark } from "@/server/watermarks";
 import { photos } from "@/db/schema";
 
@@ -82,8 +83,10 @@ describe("galleries domain", () => {
     const db = await createTestDb();
     const studio = await seedStudio(db);
     const g = await createGallery(db, studio.id, { title: "Con fotos" });
+    const section = await createSection(db, studio.id, g.id, "Fotos");
     await db.insert(photos).values({
       galleryId: g.id,
+      sectionId: section.id,
       filename: "a.jpg",
       originalKey: "studios/x/galleries/g/photo/orig-a.jpg",
       thumbKey: "studios/x/galleries/g/photo/thumb.jpg",
@@ -106,17 +109,6 @@ describe("galleries domain", () => {
     await expect(getGallery(db, studio.id, g.id)).rejects.toThrow("NOT_FOUND");
   });
 
-  it("updates the gallery template and rejects unknown values", async () => {
-    const db = await createTestDb();
-    const studio = await seedStudio(db);
-    const g = await createGallery(db, studio.id, { title: "g" });
-    expect(g.coverTemplate).toBe("editorial");
-    const upd = await updateGallerySettings(db, studio.id, g.id, { coverTemplate: "cinematico" });
-    expect(upd.coverTemplate).toBe("cinematico");
-    await expect(updateGallerySettings(db, studio.id, g.id, { coverTemplate: "neon" as never }))
-      .rejects.toThrow();
-  });
-
   it("rejects selecting a watermark from another studio", async () => {
     const db = await createTestDb();
     const s1 = await seedStudio(db);
@@ -133,8 +125,9 @@ describe("galleries domain", () => {
     const { watermark: m0 } = await saveWatermark(db, studio.id, textInput(0));
     const { watermark: m1 } = await saveWatermark(db, studio.id, { ...textInput(1), text: "otra" });
     const g = await createGallery(db, studio.id, { title: "Boda" });
+    const section = await createSection(db, studio.id, g.id, "Fotos");
     const [p] = await db.insert(photos).values({
-      galleryId: g.id, filename: "a.jpg", originalKey: "studios/x/g/x/original.jpg",
+      galleryId: g.id, sectionId: section.id, filename: "a.jpg", originalKey: "studios/x/g/x/original.jpg",
       status: "ready", thumbWmKey: "t-wm", webWmKey: "w-wm", highWmKey: "h-wm",
     }).returning();
 
@@ -151,5 +144,43 @@ describe("galleries domain", () => {
     await updateGallerySettings(db, studio.id, g.id, { watermarkId: m1.id }); // cambia
     [after] = await db.select().from(photos).where(eq(photos.id, p.id));
     expect(after.webWmKey).toBeNull();
+  });
+});
+
+describe("updateGalleryDesign", () => {
+  it("updates axes and focal point", async () => {
+    const db = await createTestDb();
+    const studio = await seedStudio(db);
+    const g = await createGallery(db, studio.id, { title: "g" });
+    expect(g.coverStyle).toBe("full");
+    const { gallery } = await updateGalleryDesign(db, studio.id, g.id, {
+      coverStyle: "split", palette: "carbon", coverFocalX: 0.2, coverFocalY: 0.8,
+    });
+    expect(gallery.coverStyle).toBe("split");
+    expect(gallery.palette).toBe("carbon");
+    expect(gallery.coverFocalX).toBeCloseTo(0.2);
+  });
+
+  it("rejects invalid axis values, foreign studios and bad cover keys", async () => {
+    const db = await createTestDb();
+    const studio = await seedStudio(db);
+    const g = await createGallery(db, studio.id, { title: "g" });
+    await expect(updateGalleryDesign(db, studio.id, g.id, { palette: "neon" as never })).rejects.toThrow();
+    await expect(updateGalleryDesign(db, studio.id, g.id, { coverFocalX: 1.5 })).rejects.toThrow();
+    await expect(updateGalleryDesign(db, "00000000-0000-0000-0000-000000000000", g.id, { palette: "noche" }))
+      .rejects.toThrow("NOT_FOUND");
+    await expect(updateGalleryDesign(db, studio.id, g.id, { coverImageKey: "studios/otro/covers/x/a.jpg" }))
+      .rejects.toThrow("INVALID_COVER_KEY");
+  });
+
+  it("returns the replaced cover key on replace and on removal", async () => {
+    const db = await createTestDb();
+    const studio = await seedStudio(db);
+    const g = await createGallery(db, studio.id, { title: "g" });
+    const k1 = `studios/${studio.id}/covers/${g.id}/a.jpg`;
+    const k2 = `studios/${studio.id}/covers/${g.id}/b.jpg`;
+    expect((await updateGalleryDesign(db, studio.id, g.id, { coverImageKey: k1 })).replacedCoverKey).toBeNull();
+    expect((await updateGalleryDesign(db, studio.id, g.id, { coverImageKey: k2 })).replacedCoverKey).toBe(k1);
+    expect((await updateGalleryDesign(db, studio.id, g.id, { coverImageKey: null })).replacedCoverKey).toBe(k2);
   });
 });

@@ -52,8 +52,6 @@
     "settings": "Configuración",
     "title": "Título",
     "status": "Estado",
-    "template": "Plantilla",
-    "templates": { "editorial": "Editorial", "cinematico": "Cinemático oscuro", "luminoso": "Luminoso tierno", "clasico": "Clásico elegante" },
     "photoOrder": "Orden de fotos",
     "orders": { "capture": "Fecha de captura", "filename": "Nombre de archivo", "manual": "Manual" },
     "watermarkMode": "Marca de agua",
@@ -89,6 +87,11 @@
     "clearPassword": "Quitar contraseña",
     "save": "Guardar",
     "shareLink": "Enlace para clientes",
+    "share": {
+      "preview": "Vista previa",
+      "copy": "Copiar enlace",
+      "copied": "Copiado ✓"
+    },
     "sections": "Secciones",
     "sectionName": "Nombre de la sección",
     "add": "Agregar",
@@ -96,13 +99,16 @@
     "up": "Subir", "down": "Bajar",
     "show": "Mostrar", "hide": "Ocultar",
     "delete": "Eliminar",
+    "deleteMoveTo": "Mover fotos a…",
+    "deleteConfirmMove": "Mover y eliminar",
+    "deleteBlocked": "Crea otra sección para poder eliminarla",
     "noSections": "Aún no hay secciones.",
     "hidden": "oculta",
     "upload": {
       "hint": "Arrastra fotos aquí o",
       "select": "elige archivos",
       "target": "Subir a",
-      "noSection": "Sin sección",
+      "needSection": "Crea una sección para subir fotos",
       "uploading": "Subiendo…",
       "processing": "Procesando…",
       "done": "Lista",
@@ -111,7 +117,6 @@
     "photos": {
       "title": "Fotos",
       "empty": "Aún no hay fotos. Sube las primeras arriba.",
-      "noSection": "Sin sección",
       "selected": "{count} seleccionadas",
       "moveTo": "Mover a…",
       "move": "Mover",
@@ -135,6 +140,24 @@
       "running": "Procesando {done} de {total}…",
       "done": "Fotos actualizadas.",
       "failed": "{count} fotos fallaron; reintenta."
+    },
+    "design": {
+      "title": "Diseño",
+      "groups": {
+        "coverStyle": "Estilo de portada",
+        "fontSet": "Tipografía",
+        "palette": "Paleta",
+        "gridStyle": "Grid"
+      },
+      "coverStyle": { "full": "Pantalla completa", "overlay": "Degradado", "split": "Dividida", "banner": "Banner" },
+      "fontSet": { "elegante": "Elegante", "dramatica": "Dramática", "amable": "Amable", "clasica": "Clásica" },
+      "palette": { "blanco": "Blanco", "marfil": "Marfil", "calido": "Cálido", "carbon": "Carbón", "noche": "Noche" },
+      "gridStyle": { "justificada": "Justificada", "aireada": "Aireada", "cuadrada": "Cuadrada" },
+      "focalHint": "Haz clic en la imagen para fijar el punto de foco",
+      "upload": "Subir imagen de portada",
+      "remove": "Quitar imagen",
+      "save": "Guardar diseño",
+      "saved": "Guardado"
     }
   },
   "activity": {
@@ -178,6 +201,8 @@
     "actionError": "No se pudo guardar. Recarga la página e inténtalo de nuevo.",
     "download": "Descargar",
     "resolutions": { "web": "Web", "high": "Alta resolución", "original": "Original" },
+    "favorites": "Favoritas",
+    "noFavorites": "Aún no tienes favoritas",
     "downloadGallery": "Descargar galería",
     "downloadFavorites": "Descargar mis favoritas",
     "downloadSection": "Descargar esta sección",
@@ -185,6 +210,8 @@
     "zipUnavailable": "La descarga en ZIP no está disponible por ahora.",
     "close": "Cerrar",
     "prev": "Anterior",
-    "next": "Siguiente"
+    "next": "Siguiente",
+    "previewBanner": "Vista previa — así verán tus clientes esta galería",
+    "previewOnly": "Solo disponible para clientes"
   }
 }

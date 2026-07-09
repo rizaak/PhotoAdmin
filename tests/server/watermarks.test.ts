@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import type { Db } from "@/db";
 import { createTestDb, seedStudio } from "../helpers/db";
 import { createGallery, updateGallerySettings } from "@/server/galleries";
+import { createSection } from "@/server/sections";
 import { photos, galleries } from "@/db/schema";
 import { listWatermarks, saveWatermark, deleteWatermark, type WatermarkInput } from "@/server/watermarks";
 
@@ -19,8 +20,10 @@ const WM_KEYS = { thumbWmKey: "t-wm", webWmKey: "w-wm", highWmKey: "h-wm" };
 
 async function seedGalleryWithPhoto(db: Db, studioId: string, title: string) {
   const gallery = await createGallery(db, studioId, { title });
+  const section = await createSection(db, studioId, gallery.id, "Fotos");
   const [photo] = await db.insert(photos).values({
-    galleryId: gallery.id, filename: "a.jpg", originalKey: `studios/${studioId}/${gallery.id}/x/original.jpg`,
+    galleryId: gallery.id, sectionId: section.id, filename: "a.jpg",
+    originalKey: `studios/${studioId}/${gallery.id}/x/original.jpg`,
     status: "ready", ...WM_KEYS,
   }).returning();
   return { gallery, photo };

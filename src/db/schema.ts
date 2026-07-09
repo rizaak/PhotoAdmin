@@ -8,7 +8,6 @@ export const galleryStatusEnum = pgEnum("gallery_status", ["draft", "published",
 export const watermarkModeEnum = pgEnum("watermark_mode", ["none", "view", "download", "both"]);
 export const photoStatusEnum = pgEnum("photo_status", ["processing", "ready", "error"]);
 export const photoOrderEnum = pgEnum("photo_order", ["capture", "filename", "manual"]);
-export const galleryThemeEnum = pgEnum("gallery_theme", ["light", "dark"]);
 export const activityTypeEnum = pgEnum("activity_type", [
   "access", "like_added", "like_removed", "comment", "download_photo", "download_zip",
 ]);
@@ -17,8 +16,14 @@ export const watermarkPlacementEnum = pgEnum("watermark_placement", [
   "tl", "tc", "tr", "ml", "center", "mr", "bl", "bc", "br", "tile",
 ]);
 
-export const GALLERY_TEMPLATES = ["editorial", "cinematico", "luminoso", "clasico"] as const;
-export type GalleryTemplate = (typeof GALLERY_TEMPLATES)[number];
+export const COVER_STYLES = ["full", "overlay", "split", "banner"] as const;
+export type CoverStyle = (typeof COVER_STYLES)[number];
+export const FONT_SETS = ["elegante", "dramatica", "amable", "clasica"] as const;
+export type FontSet = (typeof FONT_SETS)[number];
+export const PALETTES = ["blanco", "marfil", "calido", "carbon", "noche"] as const;
+export type Palette = (typeof PALETTES)[number];
+export const GRID_STYLES = ["justificada", "aireada", "cuadrada"] as const;
+export type GridStyle = (typeof GRID_STYLES)[number];
 
 export const studios = pgTable("studios", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -38,10 +43,13 @@ export const galleries = pgTable("galleries", {
   status: galleryStatusEnum("status").notNull().default("draft"),
   passwordHash: text("password_hash"),
   coverPhotoId: uuid("cover_photo_id").references((): AnyPgColumn => photos.id, { onDelete: "set null" }),
-  coverTemplate: text("cover_template").notNull().default("editorial"),
   coverFocalX: real("cover_focal_x").notNull().default(0.5),
   coverFocalY: real("cover_focal_y").notNull().default(0.5),
-  theme: galleryThemeEnum("theme").notNull().default("light"),
+  coverStyle: text("cover_style").notNull().default("full"),
+  fontSet: text("font_set").notNull().default("elegante"),
+  palette: text("palette").notNull().default("blanco"),
+  gridStyle: text("grid_style").notNull().default("justificada"),
+  coverImageKey: text("cover_image_key"),
   photoOrder: photoOrderEnum("photo_order").notNull().default("capture"),
   downloadEnabled: boolean("download_enabled").notNull().default(false),
   resWebEnabled: boolean("res_web_enabled").notNull().default(true),
@@ -68,7 +76,7 @@ export const sections = pgTable("sections", {
 export const photos = pgTable("photos", {
   id: uuid("id").defaultRandom().primaryKey(),
   galleryId: uuid("gallery_id").notNull().references(() => galleries.id, { onDelete: "cascade" }),
-  sectionId: uuid("section_id").references(() => sections.id, { onDelete: "set null" }),
+  sectionId: uuid("section_id").notNull().references(() => sections.id),
   filename: text("filename").notNull(),
   originalKey: text("original_key").notNull(),
   thumbKey: text("thumb_key"),

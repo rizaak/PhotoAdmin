@@ -14,7 +14,8 @@ async function setup() {
   const studio = await seedStudio(db);
   const g = await createGallery(db, studio.id, { title: "Boda" });
   await updateGallerySettings(db, studio.id, g.id, { status: "published" });
-  const p0 = await registerUpload(db, studio.id, g.id, { filename: "a.jpg", size: 10, contentType: "image/jpeg", sectionId: null });
+  const initialSection = await createSection(db, studio.id, g.id, "Fotos");
+  const p0 = await registerUpload(db, studio.id, g.id, { filename: "a.jpg", size: 10, contentType: "image/jpeg", sectionId: initialSection.id });
   const photo = await completeProcessing(db, studio.id, p0.id, {
     width: 1, height: 1, takenAt: null, thumbKey: "t", webKey: "w", sizeDerivativesBytes: 1, sizeOriginalBytes: 10,
   });

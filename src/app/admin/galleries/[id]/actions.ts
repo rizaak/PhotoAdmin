@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
-import { GALLERY_TEMPLATES } from "@/db/schema";
 import { requireStudio } from "@/server/auth";
-import { updateGallerySettings } from "@/server/galleries";
+import { updateGallerySettings, updateGalleryDesign } from "@/server/galleries";
+import type { CoverStyle, FontSet, Palette, GridStyle } from "@/db/schema";
 import {
   createSection, renameSection, setSectionVisible, reorderSections, deleteSection, listSections,
   setSectionOverrides,
@@ -20,7 +20,6 @@ const id = z.string().uuid();
 const settingsForm = z.object({
   title: z.string().trim().min(1).max(200),
   status: z.enum(["draft", "published", "archived"]),
-  coverTemplate: z.enum(GALLERY_TEMPLATES),
   photoOrder: z.enum(["capture", "filename", "manual"]),
   watermarkMode: z.enum(["none", "view", "download", "both"]),
   watermarkId: z.string().uuid().nullable(),
@@ -36,7 +35,6 @@ export async function updateGalleryAction(formData: FormData) {
   const data = settingsForm.parse({
     title: formData.get("title"),
     status: formData.get("status"),
-    coverTemplate: formData.get("coverTemplate"),
     photoOrder: formData.get("photoOrder"),
     watermarkMode: formData.get("watermarkMode"),
     watermarkId: String(formData.get("watermarkId") ?? "") || null,
@@ -96,7 +94,8 @@ export async function moveSectionAction(formData: FormData) {
 export async function deleteSectionAction(formData: FormData) {
   const studio = await requireStudio();
   const galleryId = id.parse(formData.get("galleryId"));
-  await deleteSection(db, studio.id, id.parse(formData.get("sectionId")));
+  const moveToSectionId = String(formData.get("moveToSectionId") ?? "") || undefined;
+  await deleteSection(db, studio.id, id.parse(formData.get("sectionId")), moveToSectionId);
   revalidatePath(`/admin/galleries/${galleryId}`);
 }
 
@@ -116,9 +115,9 @@ export async function setSectionOverridesAction(formData: FormData) {
 const photoIds = z.array(z.string().uuid()).min(1).max(500);
 const photoBatch = z.object({ galleryId: z.string().uuid(), photoIds });
 
-export async function movePhotosAction(input: { galleryId: string; photoIds: string[]; sectionId: string | null }) {
+export async function movePhotosAction(input: { galleryId: string; photoIds: string[]; sectionId: string }) {
   const studio = await requireStudio();
-  const data = photoBatch.extend({ sectionId: z.string().uuid().nullable() }).parse(input);
+  const data = photoBatch.extend({ sectionId: z.string().uuid() }).parse(input);
   await movePhotos(db, studio.id, data.galleryId, data.photoIds, data.sectionId);
   revalidatePath(`/admin/galleries/${data.galleryId}`);
 }
@@ -150,4 +149,24 @@ export async function setWatermarkOverrideAction(input: { galleryId: string; pho
   const data = photoBatch.extend({ override: z.boolean().nullable() }).parse(input);
   await setPhotosWatermarkOverride(db, studio.id, data.galleryId, data.photoIds, data.override);
   revalidatePath(`/admin/galleries/${data.galleryId}`);
+}
+
+export async function updateGalleryDesignAction(input: {
+  galleryId: string;
+  coverStyle?: string; fontSet?: string; palette?: string; gridStyle?: string;
+  coverFocalX?: number; coverFocalY?: number; coverImageKey?: string | null;
+}) {
+  const studio = await requireStudio();
+  const galleryId = id.parse(input.galleryId);
+  const { replacedCoverKey } = await updateGalleryDesign(db, studio.id, galleryId, {
+    coverStyle: input.coverStyle as CoverStyle | undefined,
+    fontSet: input.fontSet as FontSet | undefined,
+    palette: input.palette as Palette | undefined,
+    gridStyle: input.gridStyle as GridStyle | undefined,
+    coverFocalX: input.coverFocalX,
+    coverFocalY: input.coverFocalY,
+    coverImageKey: input.coverImageKey,
+  });
+  if (replacedCoverKey) await deleteObjects([replacedCoverKey]);
+  revalidatePath(`/admin/galleries/${galleryId}`);
 }
