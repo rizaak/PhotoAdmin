@@ -52,8 +52,9 @@ export function PhotoGrid({
   );
 
   if (gt.square) {
+    // 2 celulares · 3 pantallas chicas · 4 hasta ~13" (1024-1535px) · 5 monitores grandes (1536px+)
     return (
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5" style={{ gap: gt.gap }}>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5" style={{ gap: gt.gap }}>
         {photos.map((p, i) => figure(p, i, "aspect-square", {}))}
       </div>
     );
