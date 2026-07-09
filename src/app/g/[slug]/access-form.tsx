@@ -59,8 +59,8 @@ export function AccessForm({
         {state?.error && <p className="text-sm text-red-600">{labels[state.error]}</p>}
         <button
           disabled={pending}
-          className="w-full rounded-full py-2.5 text-sm text-white transition-opacity disabled:opacity-50"
-          style={{ background: pt.dark ? pt.accent : "#1a1a1a" }}
+          className="w-full rounded-full py-2.5 text-sm transition-opacity disabled:opacity-50"
+          style={{ background: pt.dark ? pt.accent : "#1a1a1a", color: pt.dark ? "#0e0e10" : "#fff" }}
         >
           {labels.enter}
         </button>
