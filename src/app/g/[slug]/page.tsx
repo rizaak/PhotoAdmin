@@ -66,7 +66,7 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
       labels={{
         like: t("like"), unlike: t("unlike"), comments: t("comments"),
         commentPlaceholder: t("commentPlaceholder"), send: t("send"),
-        empty: t("empty"), yourActivity: t("yourActivity"), actionError: t("actionError"),
+        empty: t("empty"), actionError: t("actionError"),
         download: t("download"),
         resolutions: { web: t("resolutions.web"), high: t("resolutions.high"), original: t("resolutions.original") },
         favorites: t("favorites"), noFavorites: t("noFavorites"),

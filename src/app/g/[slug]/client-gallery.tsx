@@ -28,7 +28,7 @@ export type ClientPhoto = {
 
 type Labels = {
   like: string; unlike: string; comments: string; commentPlaceholder: string;
-  send: string; empty: string; yourActivity: string; actionError: string;
+  send: string; empty: string; actionError: string;
   download: string; resolutions: Record<Res, string>;
   favorites: string; noFavorites: string;
   downloadGallery: string; downloadFavorites: string; downloadSection: string;
@@ -140,8 +140,6 @@ export function ClientGallery({
           resolutions: labels.resolutions, previewOnly: labels.previewOnly,
         }}
       />
-
-      <p className="mx-auto max-w-6xl px-4 pt-10 text-xs opacity-60">{labels.yourActivity}</p>
 
       {sections.length === 0 && photos.length === 0 && (
         <p className="p-10 text-center text-sm opacity-60">{labels.empty}</p>
