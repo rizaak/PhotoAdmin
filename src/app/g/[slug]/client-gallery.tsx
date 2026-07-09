@@ -148,7 +148,7 @@ export function ClientGallery({
         <p className="p-16 text-center text-sm" style={{ color: pt.muted }}>{labels.noFavorites}</p>
       )}
 
-      <div className="mx-auto max-w-6xl p-4">
+      <div className="w-full">
         <PhotoGrid
           design={design} photos={visible} onOpen={(p) => setOpenId(p.id)}
           onToggleLike={(p) => void onToggleLike(p)}
