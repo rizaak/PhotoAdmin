@@ -53,7 +53,7 @@ export function PhotoGrid({
 
   if (gt.square) {
     return (
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6" style={{ gap: gt.gap }}>
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5" style={{ gap: gt.gap }}>
         {photos.map((p, i) => figure(p, i, "aspect-square", {}))}
       </div>
     );
