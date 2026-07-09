@@ -45,7 +45,7 @@ export function TitleBar({
   }, [menu]);
 
   const tab = (active: boolean) =>
-    `rounded-full px-3 py-1 text-xs transition-colors ${active ? "text-white" : "hover:opacity-70"}`;
+    `rounded-full px-3 py-1 text-xs transition-colors ${active ? "" : "hover:opacity-70"}`;
 
   return (
     <div
@@ -97,10 +97,10 @@ export function TitleBar({
         </div>
       </div>
       {sections.length > 1 && (
-        <nav className="mx-auto mt-2 flex max-w-6xl flex-wrap gap-1.5">
+        <nav role="tablist" className="mx-auto mt-2 flex max-w-6xl flex-wrap gap-1.5">
           {sections.map((s) => (
-            <button key={s.id} onClick={() => onSelectSection(s.id)} className={tab(activeSectionId === s.id)}
-              style={activeSectionId === s.id ? { background: pt.accent } : { color: pt.muted }}>
+            <button key={s.id} onClick={() => onSelectSection(s.id)} role="tab" aria-selected={activeSectionId === s.id} className={tab(activeSectionId === s.id)}
+              style={activeSectionId === s.id ? { background: pt.accent, color: pt.dark ? "#0e0e10" : "#fff" } : { color: pt.muted }}>
               {s.name}
             </button>
           ))}
