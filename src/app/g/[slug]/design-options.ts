@@ -27,9 +27,9 @@ export const FONT_TOKENS: Record<FontSet, FontTokens> = {
 };
 
 export const GRID_TOKENS: Record<GridStyle, { targetH: number; gap: number; square: boolean }> = {
-  justificada: { targetH: 280, gap: 8, square: false },
-  aireada: { targetH: 360, gap: 24, square: false },
-  cuadrada: { targetH: 0, gap: 8, square: true },
+  justificada: { targetH: 220, gap: 6, square: false },
+  aireada: { targetH: 280, gap: 18, square: false },
+  cuadrada: { targetH: 0, gap: 6, square: true },
 };
 
 export const PHOTO_RADIUS = "2px";
