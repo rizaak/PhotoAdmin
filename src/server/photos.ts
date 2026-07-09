@@ -11,7 +11,7 @@ const registerSchema = z.object({
   filename: z.string().trim().min(1).max(200),
   size: z.number().int().positive().max(MAX_UPLOAD_BYTES),
   contentType: z.enum(["image/jpeg", "image/png", "image/webp"]),
-  sectionId: z.string().uuid().nullable().optional(),
+  sectionId: z.string().uuid(),
 });
 export type RegisterUploadInput = z.infer<typeof registerSchema>;
 
@@ -31,8 +31,6 @@ export async function registerUpload(
 ): Promise<Photo> {
   const data = registerSchema.parse(input);
   await getGallery(db, studioId, galleryId);
-  // ponytail: photos.sectionId is NOT NULL now; a full sectionId-required API (Zod + callers) lands in a later task.
-  if (!data.sectionId) throw new Error("SECTION_REQUIRED");
   await assertSectionInGallery(db, galleryId, data.sectionId);
 
   const id = randomUUID();
@@ -111,12 +109,10 @@ async function assertPhotosInGallery(db: Db, studioId: string, galleryId: string
 }
 
 export async function movePhotos(
-  db: Db, studioId: string, galleryId: string, photoIds: string[], sectionId: string | null,
+  db: Db, studioId: string, galleryId: string, photoIds: string[], sectionId: string,
 ): Promise<void> {
   const ids = idList.parse(photoIds);
   await assertPhotosInGallery(db, studioId, galleryId, ids);
-  // ponytail: photos.sectionId is NOT NULL now; guided "no section" UX lands in a later task.
-  if (!sectionId) throw new Error("SECTION_REQUIRED");
   await assertSectionInGallery(db, galleryId, sectionId);
   await db.update(photos).set({ sectionId })
     .where(and(inArray(photos.id, ids), eq(photos.galleryId, galleryId)));

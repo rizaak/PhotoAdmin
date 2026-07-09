@@ -10,11 +10,12 @@ import { presignDownload } from "@/server/storage";
 import { listWatermarks } from "@/server/watermarks";
 import {
   updateGalleryAction, addSectionAction, renameSectionAction,
-  toggleSectionAction, moveSectionAction, deleteSectionAction, setSectionOverridesAction,
+  toggleSectionAction, moveSectionAction, setSectionOverridesAction,
 } from "./actions";
 import { PhotoUploader } from "./photo-uploader";
 import { PhotoManager, type PhotoView } from "./photo-manager";
 import { ReprocessPhotos } from "./reprocess-photos";
+import { DeleteSection } from "./delete-section";
 
 export default async function GalleryDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -40,6 +41,10 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
       webUrl: p.webKey ? await presignDownload(p.webKey) : null,
     })),
   );
+  const photoCountBySection = new Map<string, number>();
+  for (const p of photoRows) {
+    photoCountBySection.set(p.sectionId, (photoCountBySection.get(p.sectionId) ?? 0) + 1);
+  }
   const tp = await getTranslations("galleryDetail.photos");
   const tu = await getTranslations("galleryDetail.upload");
   const studioMarks = await listWatermarks(db, studio.id);
@@ -193,11 +198,16 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
                   {s.visible ? t("hide") : t("show")}
                 </button>
               </form>
-              <form action={deleteSectionAction}>
-                <input type="hidden" name="galleryId" value={gallery.id} />
-                <input type="hidden" name="sectionId" value={s.id} />
-                <button className="text-red-600 hover:underline">{t("delete")}</button>
-              </form>
+              <DeleteSection
+                galleryId={gallery.id}
+                sectionId={s.id}
+                photoCount={photoCountBySection.get(s.id) ?? 0}
+                otherSections={sectionList.filter((x) => x.id !== s.id).map((x) => ({ id: x.id, name: x.name }))}
+                labels={{
+                  delete: t("delete"), deleteMoveTo: t("deleteMoveTo"),
+                  deleteConfirmMove: t("deleteConfirmMove"), deleteBlocked: t("deleteBlocked"),
+                }}
+              />
               <form action={setSectionOverridesAction} className="flex items-center gap-1 text-xs">
                 <input type="hidden" name="galleryId" value={gallery.id} />
                 <input type="hidden" name="sectionId" value={s.id} />
@@ -242,7 +252,7 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
             galleryId={gallery.id}
             sections={sectionList.map((s) => ({ id: s.id, name: s.name }))}
             labels={{
-              hint: tu("hint"), select: tu("select"), target: tu("target"), noSection: tu("noSection"),
+              hint: tu("hint"), select: tu("select"), target: tu("target"), needSection: tu("needSection"),
               uploading: tu("uploading"), processing: tu("processing"), done: tu("done"), error: tu("error"),
             }}
           />
@@ -255,7 +265,7 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
           labels={{
             // selected/deleteConfirm son plantillas con {count} que el cliente
             // interpola; tp() validaría las variables ICU y fallaría sin count.
-            empty: tp("empty"), noSection: tp("noSection"), selected: tp.raw("selected") as string,
+            empty: tp("empty"), selected: tp.raw("selected") as string,
             moveTo: tp("moveTo"), move: tp("move"), publish: tp("publish"), hide: tp("hide"),
             delete: tp("delete"), deleteConfirm: tp.raw("deleteConfirm") as string, setCover: tp("setCover"),
             hiddenBadge: tp("hiddenBadge"), processingBadge: tp("processingBadge"),

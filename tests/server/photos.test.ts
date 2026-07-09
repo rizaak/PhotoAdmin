@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { eq } from "drizzle-orm";
+import { ZodError } from "zod";
 import { createTestDb, seedStudio } from "../helpers/db";
 import { createGallery, updateGallerySettings, getGallery } from "@/server/galleries";
 import { createSection } from "@/server/sections";
@@ -36,6 +37,12 @@ describe("photos domain", () => {
       `studios/${studio.id}/galleries/${gallery.id}/${photo.id}/orig-IMG_0001.jpg`,
     );
     expect(photo.sizeOriginalBytes).toBe(1000);
+  });
+
+  it("requires a sectionId to register an upload", async () => {
+    const { db, studio, gallery } = await setup();
+    const noSection = { filename: "a.jpg", size: 1000, contentType: "image/jpeg" as const };
+    await expect(registerUpload(db, studio.id, gallery.id, noSection as never)).rejects.toThrow(ZodError);
   });
 
   it("rejects bad content types and oversized files", async () => {
@@ -184,7 +191,7 @@ describe("photos domain", () => {
       width: 1, height: 1, takenAt: null, thumbKey: "t", webKey: "w", sizeDerivativesBytes: 1, sizeOriginalBytes: 1000,
     })).rejects.toThrow("NOT_FOUND");
     await expect(markPhotoError(db, intruder.id, p.id)).rejects.toThrow("NOT_FOUND");
-    await expect(movePhotos(db, intruder.id, gallery.id, [p.id], null)).rejects.toThrow("NOT_FOUND");
+    await expect(movePhotos(db, intruder.id, gallery.id, [p.id], section.id)).rejects.toThrow("NOT_FOUND");
     await expect(setPhotosPublished(db, intruder.id, gallery.id, [p.id], false)).rejects.toThrow("NOT_FOUND");
     await expect(deletePhotos(db, intruder.id, gallery.id, [p.id])).rejects.toThrow("NOT_FOUND");
     await expect(setCoverPhoto(db, intruder.id, gallery.id, p.id)).rejects.toThrow("NOT_FOUND");

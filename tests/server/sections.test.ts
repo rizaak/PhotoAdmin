@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { eq } from "drizzle-orm";
 import { createTestDb, seedStudio } from "../helpers/db";
 import { createGallery } from "@/server/galleries";
 import {
@@ -36,14 +37,41 @@ describe("sections domain", () => {
     expect((await listSections(db, studio.id, gallery.id)).map((s) => s.id)).toEqual([s2.id, s1.id]);
   });
 
-  it("cannot delete a section that still has photos (FK enforced; guided deletion lands in a later task)", async () => {
+  it("deletes an empty section directly", async () => {
     const { db, studio, gallery } = await setup();
-    const s = await createSection(db, studio.id, gallery.id, "Temporal");
-    await db.insert(photos)
-      .values({ galleryId: gallery.id, sectionId: s.id, filename: "a.jpg", originalKey: "o/a" })
+    const s = await createSection(db, studio.id, gallery.id, "Vacía");
+    await deleteSection(db, studio.id, s.id);
+    expect((await listSections(db, studio.id, gallery.id)).map((x) => x.id)).not.toContain(s.id);
+  });
+
+  it("requires a target when the section has photos and moves them", async () => {
+    const { db, studio, gallery } = await setup();
+    const a = await createSection(db, studio.id, gallery.id, "A");
+    const b = await createSection(db, studio.id, gallery.id, "B");
+    const [photo] = await db.insert(photos)
+      .values({ galleryId: gallery.id, sectionId: a.id, filename: "a.jpg", originalKey: "o/a" })
       .returning();
 
-    await expect(deleteSection(db, studio.id, s.id)).rejects.toThrow();
+    await expect(deleteSection(db, studio.id, a.id)).rejects.toThrow("SECTION_NOT_EMPTY");
+
+    await deleteSection(db, studio.id, a.id, b.id);
+    const [moved] = await db.select().from(photos).where(eq(photos.id, photo.id));
+    expect(moved.sectionId).toBe(b.id);
+    expect((await listSections(db, studio.id, gallery.id)).map((x) => x.id)).not.toContain(a.id);
+  });
+
+  it("rejects a target from another gallery and foreign studios", async () => {
+    const { db, studio, gallery } = await setup();
+    const a = await createSection(db, studio.id, gallery.id, "A");
+    await db.insert(photos)
+      .values({ galleryId: gallery.id, sectionId: a.id, filename: "a.jpg", originalKey: "o/a" });
+    const other = await createGallery(db, studio.id, { title: "Otra" });
+    const foreign = await createSection(db, studio.id, other.id, "Ajena");
+
+    await expect(deleteSection(db, studio.id, a.id, foreign.id)).rejects.toThrow("INVALID_TARGET");
+
+    const intruder = await seedStudio(db, "auth0|intruso-del");
+    await expect(deleteSection(db, intruder.id, a.id, foreign.id)).rejects.toThrow("NOT_FOUND");
   });
 
   it("rejects reorders that are not a permutation of the gallery's sections", async () => {

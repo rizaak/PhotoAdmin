@@ -93,7 +93,8 @@ export async function moveSectionAction(formData: FormData) {
 export async function deleteSectionAction(formData: FormData) {
   const studio = await requireStudio();
   const galleryId = id.parse(formData.get("galleryId"));
-  await deleteSection(db, studio.id, id.parse(formData.get("sectionId")));
+  const moveToSectionId = String(formData.get("moveToSectionId") ?? "") || undefined;
+  await deleteSection(db, studio.id, id.parse(formData.get("sectionId")), moveToSectionId);
   revalidatePath(`/admin/galleries/${galleryId}`);
 }
 
@@ -113,9 +114,9 @@ export async function setSectionOverridesAction(formData: FormData) {
 const photoIds = z.array(z.string().uuid()).min(1).max(500);
 const photoBatch = z.object({ galleryId: z.string().uuid(), photoIds });
 
-export async function movePhotosAction(input: { galleryId: string; photoIds: string[]; sectionId: string | null }) {
+export async function movePhotosAction(input: { galleryId: string; photoIds: string[]; sectionId: string }) {
   const studio = await requireStudio();
-  const data = photoBatch.extend({ sectionId: z.string().uuid().nullable() }).parse(input);
+  const data = photoBatch.extend({ sectionId: z.string().uuid() }).parse(input);
   await movePhotos(db, studio.id, data.galleryId, data.photoIds, data.sectionId);
   revalidatePath(`/admin/galleries/${data.galleryId}`);
 }

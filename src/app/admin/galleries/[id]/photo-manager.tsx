@@ -9,7 +9,7 @@ import {
 export type PhotoView = {
   id: string;
   filename: string;
-  sectionId: string | null;
+  sectionId: string;
   published: boolean;
   status: "processing" | "ready" | "error";
   thumbUrl: string | null;
@@ -17,7 +17,7 @@ export type PhotoView = {
 };
 
 type Labels = {
-  empty: string; noSection: string; selected: string; moveTo: string; move: string;
+  empty: string; selected: string; moveTo: string; move: string;
   publish: string; hide: string; delete: string; deleteConfirm: string;
   setCover: string; hiddenBadge: string; processingBadge: string; errorBadge: string; clear: string;
   actionError: string;
@@ -48,18 +48,16 @@ export function PhotoManager({
   const router = useRouter();
 
   const groups = useMemo(() => {
-    const bySection = new Map<string | null, PhotoView[]>();
+    const bySection = new Map<string, PhotoView[]>();
     for (const p of photos) {
-      const key = p.sectionId ?? null;
-      bySection.set(key, [...(bySection.get(key) ?? []), p]);
+      bySection.set(p.sectionId, [...(bySection.get(p.sectionId) ?? []), p]);
     }
-    const ordered: { id: string | null; name: string; photos: PhotoView[] }[] = [];
-    if (bySection.has(null)) ordered.push({ id: null, name: labels.noSection, photos: bySection.get(null)! });
+    const ordered: { id: string; name: string; photos: PhotoView[] }[] = [];
     for (const s of sections) {
       if (bySection.has(s.id)) ordered.push({ id: s.id, name: s.name, photos: bySection.get(s.id)! });
     }
     return ordered;
-  }, [photos, sections, labels.noSection]);
+  }, [photos, sections]);
 
   function toggle(id: string, additive: boolean) {
     setSelected((prev) => {
@@ -129,13 +127,12 @@ export function PhotoManager({
           <span className="font-medium">{labels.selected.replace("{count}", String(selected.size))}</span>
           <select value={moveTarget} onChange={(e) => setMoveTarget(e.target.value)} className="rounded border px-2 py-1">
             <option value={MOVE_PLACEHOLDER} disabled>{labels.moveTo}</option>
-            <option value="">{labels.noSection}</option>
             {sections.map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>
           <button disabled={pending || moveTarget === MOVE_PLACEHOLDER} className="rounded border px-2 py-1"
-            onClick={() => run(() => movePhotosAction({ galleryId, photoIds: ids, sectionId: moveTarget || null }))}>
+            onClick={() => run(() => movePhotosAction({ galleryId, photoIds: ids, sectionId: moveTarget }))}>
             {labels.move}
           </button>
           <button disabled={pending} className="rounded border px-2 py-1"
@@ -192,7 +189,7 @@ export function PhotoManager({
         )}
         {photos.length === 0 && <p className="text-sm text-neutral-500">{labels.empty}</p>}
         {groups.map((group) => (
-          <section key={group.id ?? "none"}>
+          <section key={group.id}>
             <h3 className="mb-2 text-sm font-medium text-neutral-600">{group.name}</h3>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
               {group.photos.map((p) => (
