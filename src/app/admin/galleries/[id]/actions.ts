@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import { requireStudio } from "@/server/auth";
-import { updateGallerySettings } from "@/server/galleries";
+import { updateGallerySettings, updateGalleryDesign } from "@/server/galleries";
+import type { CoverStyle, FontSet, Palette, GridStyle } from "@/db/schema";
 import {
   createSection, renameSection, setSectionVisible, reorderSections, deleteSection, listSections,
   setSectionOverrides,
@@ -148,4 +149,24 @@ export async function setWatermarkOverrideAction(input: { galleryId: string; pho
   const data = photoBatch.extend({ override: z.boolean().nullable() }).parse(input);
   await setPhotosWatermarkOverride(db, studio.id, data.galleryId, data.photoIds, data.override);
   revalidatePath(`/admin/galleries/${data.galleryId}`);
+}
+
+export async function updateGalleryDesignAction(input: {
+  galleryId: string;
+  coverStyle?: string; fontSet?: string; palette?: string; gridStyle?: string;
+  coverFocalX?: number; coverFocalY?: number; coverImageKey?: string | null;
+}) {
+  const studio = await requireStudio();
+  const galleryId = id.parse(input.galleryId);
+  const { replacedCoverKey } = await updateGalleryDesign(db, studio.id, galleryId, {
+    coverStyle: input.coverStyle as CoverStyle | undefined,
+    fontSet: input.fontSet as FontSet | undefined,
+    palette: input.palette as Palette | undefined,
+    gridStyle: input.gridStyle as GridStyle | undefined,
+    coverFocalX: input.coverFocalX,
+    coverFocalY: input.coverFocalY,
+    coverImageKey: input.coverImageKey,
+  });
+  if (replacedCoverKey) await deleteObjects([replacedCoverKey]);
+  revalidatePath(`/admin/galleries/${galleryId}`);
 }

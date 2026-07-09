@@ -135,6 +135,24 @@
       "running": "Processing {done} of {total}…",
       "done": "Photos updated.",
       "failed": "{count} photos failed; retry."
+    },
+    "design": {
+      "title": "Design",
+      "groups": {
+        "coverStyle": "Cover style",
+        "fontSet": "Typography",
+        "palette": "Palette",
+        "gridStyle": "Grid"
+      },
+      "coverStyle": { "full": "Full screen", "overlay": "Overlay", "split": "Split", "banner": "Banner" },
+      "fontSet": { "elegante": "Elegant", "dramatica": "Dramatic", "amable": "Friendly", "clasica": "Classic" },
+      "palette": { "blanco": "White", "marfil": "Ivory", "calido": "Warm", "carbon": "Charcoal", "noche": "Night" },
+      "gridStyle": { "justificada": "Justified", "aireada": "Airy", "cuadrada": "Square" },
+      "focalHint": "Click the image to set the focal point",
+      "upload": "Upload cover image",
+      "remove": "Remove image",
+      "save": "Save design",
+      "saved": "Saved"
     }
   },
   "activity": {

@@ -135,6 +135,24 @@
       "running": "Procesando {done} de {total}…",
       "done": "Fotos actualizadas.",
       "failed": "{count} fotos fallaron; reintenta."
+    },
+    "design": {
+      "title": "Diseño",
+      "groups": {
+        "coverStyle": "Estilo de portada",
+        "fontSet": "Tipografía",
+        "palette": "Paleta",
+        "gridStyle": "Grid"
+      },
+      "coverStyle": { "full": "Pantalla completa", "overlay": "Degradado", "split": "Dividida", "banner": "Banner" },
+      "fontSet": { "elegante": "Elegante", "dramatica": "Dramática", "amable": "Amable", "clasica": "Clásica" },
+      "palette": { "blanco": "Blanco", "marfil": "Marfil", "calido": "Cálido", "carbon": "Carbón", "noche": "Noche" },
+      "gridStyle": { "justificada": "Justificada", "aireada": "Aireada", "cuadrada": "Cuadrada" },
+      "focalHint": "Haz clic en la imagen para fijar el punto de foco",
+      "upload": "Subir imagen de portada",
+      "remove": "Quitar imagen",
+      "save": "Guardar diseño",
+      "saved": "Guardado"
     }
   },
   "activity": {

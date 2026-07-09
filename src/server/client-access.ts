@@ -57,6 +57,23 @@ export async function accessGallery(
   return { gallery, clientId: client.id, firstAccess };
 }
 
+// Fotos visibles para el cliente: publicadas, listas y en sección visible (o sin sección),
+// en el orden de entrega de la galería. Compartido entre la vista autenticada y la puerta
+// (portada efectiva) para que ambas apliquen exactamente los mismos gates.
+export async function getVisiblePhotos(
+  db: Db, gallery: Gallery,
+): Promise<{ sections: Section[]; photos: Photo[] }> {
+  const visibleSections = await db.select().from(sections)
+    .where(and(eq(sections.galleryId, gallery.id), eq(sections.visible, true)))
+    .orderBy(asc(sections.position));
+
+  const allPhotos = await listPhotosForGallery(db, gallery);
+  const shown = allPhotos.filter((p) => p.published && p.status === "ready");
+  const visibleSectionIds = new Set(visibleSections.map((s) => s.id));
+  const photos = shown.filter((p) => p.sectionId === null || visibleSectionIds.has(p.sectionId));
+  return { sections: visibleSections, photos };
+}
+
 export type ClientGalleryData = {
   gallery: Gallery;
   sections: Section[];
@@ -70,14 +87,7 @@ export async function getClientGalleryData(db: Db, galleryId: string, clientId: 
     .where(and(eq(galleries.id, galleryId), eq(galleries.status, "published")));
   if (!gallery) throw new Error("NOT_FOUND");
 
-  const visibleSections = await db.select().from(sections)
-    .where(and(eq(sections.galleryId, galleryId), eq(sections.visible, true)))
-    .orderBy(asc(sections.position));
-
-  const allPhotos = await listPhotosForGallery(db, gallery);
-  const shown = allPhotos.filter((p) => p.published && p.status === "ready");
-  const visibleSectionIds = new Set(visibleSections.map((s) => s.id));
-  const clientPhotos = shown.filter((p) => p.sectionId === null || visibleSectionIds.has(p.sectionId));
+  const { sections: visibleSections, photos: clientPhotos } = await getVisiblePhotos(db, gallery);
   const shownIds = new Set(clientPhotos.map((p) => p.id));
 
   const myLikes = await db.select({ photoId: likes.photoId }).from(likes)

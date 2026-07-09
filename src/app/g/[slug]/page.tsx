@@ -1,14 +1,14 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { photos, sections, type CoverStyle, type FontSet, type Palette, type GridStyle } from "@/db/schema";
+import { type CoverStyle, type FontSet, type Palette, type GridStyle } from "@/db/schema";
 import type { GalleryDesign } from "./design-options";
-import { getClientGalleryData, getPublicGallery } from "@/server/client-access";
+import { getClientGalleryData, getPublicGallery, getVisiblePhotos } from "@/server/client-access";
 import { getOptionalClientSession } from "@/server/client-auth";
 import { presignDownload } from "@/server/storage";
+import { pickCoverSource } from "@/server/cover";
 import {
-  clientViewPhotos, effectiveWatermarkMode, effectiveDownloadEnabled, enabledResolutions, downloadKey, viewKeys,
+  clientViewPhotos, effectiveWatermarkMode, effectiveDownloadEnabled, enabledResolutions, downloadKey,
 } from "@/server/delivery";
 import { AccessForm } from "./access-form";
 import { ClientGallery } from "./client-gallery";
@@ -34,24 +34,20 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
   if (!session) {
     const gallery = await getPublicGallery(db, slug).catch(() => null);
     if (!gallery) notFound();
+    // Portada efectiva: imagen subida (sin gates, no es contenido entregable al cliente)
+    // > foto elegida > primera foto elegible, todas pasadas por los mismos gates de
+    // visibilidad que el resto de la puerta (published + ready + sección visible).
     let coverUrl: string | null = null;
-    if (gallery.coverPhotoId) {
-      // Mismos gates de visibilidad que getClientGalleryData: published + ready + sección visible
-      const [cover] = await db.select().from(photos)
-        .where(and(
-          eq(photos.id, gallery.coverPhotoId), eq(photos.galleryId, gallery.id),
-          eq(photos.published, true), eq(photos.status, "ready"),
-        ));
-      const [section] = cover?.sectionId
-        ? await db.select().from(sections)
-          .where(and(eq(sections.id, cover.sectionId), eq(sections.galleryId, gallery.id)))
-        : [];
-      if (cover && (!cover.sectionId || section?.visible)) {
-        const mode = effectiveWatermarkMode(cover, section ?? null,
-          { watermarkMode: gallery.watermarkMode, hasWatermarks: !!gallery.watermarkId });
-        const keys = viewKeys(cover, mode);
-        if (keys) coverUrl = await presignDownload(keys.webKey);
-      }
+    const { sections: doorSections, photos: doorPhotos } = await getVisiblePhotos(db, gallery);
+    const doorSource = pickCoverSource(gallery, doorPhotos);
+    if (doorSource?.type === "upload") {
+      coverUrl = await presignDownload(doorSource.key);
+    } else if (doorSource?.type === "photo") {
+      const doorViewList = clientViewPhotos(
+        doorPhotos, doorSections, { watermarkMode: gallery.watermarkMode, hasWatermarks: !!gallery.watermarkId },
+      );
+      const doorView = doorViewList.find((v) => v.id === doorSource.photo.id) ?? doorViewList[0];
+      if (doorView) coverUrl = await presignDownload(doorView.webKey);
     }
     return (
       <AccessForm
@@ -101,8 +97,16 @@ export default async function ClientGalleryPage({ params }: { params: Promise<{ 
       };
     }),
   );
-  const cover = viewList.find((v) => v.id === data.gallery.coverPhotoId);
-  const coverUrl = cover ? await presignDownload(cover.webKey) : null;
+  // Misma prioridad que en la puerta: subida > foto elegida > primera elegible, usando
+  // la MISMA lista filtrada/ordenada (data.photos) que ya alimenta la grilla del cliente.
+  const coverSource = pickCoverSource(data.gallery, data.photos);
+  let coverUrl: string | null = null;
+  if (coverSource?.type === "upload") {
+    coverUrl = await presignDownload(coverSource.key);
+  } else if (coverSource?.type === "photo") {
+    const coverView = viewList.find((v) => v.id === coverSource.photo.id) ?? viewList[0];
+    if (coverView) coverUrl = await presignDownload(coverView.webKey);
+  }
   const sectionBlocks = data.sections.map((s) => ({ id: s.id, name: s.name }));
   const zip = {
     enabled: photoViews.some((p) => p.downloads.length > 0),
