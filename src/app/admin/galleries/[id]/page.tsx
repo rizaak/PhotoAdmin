@@ -81,13 +81,13 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
     <div className="space-y-10">
       <div>
         <h1 className="text-2xl font-semibold">{gallery.title}</h1>
-        <p className="flex items-center gap-2 text-sm text-neutral-500">
+        <div className="flex items-center gap-2 text-sm text-neutral-500">
           {t("shareLink")}:
           <ShareLinks
             slug={gallery.slug}
             labels={{ preview: t("share.preview"), copy: t("share.copy"), copied: t("share.copied") }}
           />
-        </p>
+        </div>
         <Link href={`/admin/galleries/${gallery.id}/activity`} className="text-sm text-neutral-500 hover:underline">
           {tActivity("title")} →
         </Link>
