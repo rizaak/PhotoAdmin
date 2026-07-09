@@ -3,7 +3,7 @@ import { createTestDb, seedStudio } from "../helpers/db";
 import { createGallery, updateGallerySettings } from "@/server/galleries";
 import { createSection, setSectionVisible } from "@/server/sections";
 import { registerUpload, completeProcessing, setPhotosPublished } from "@/server/photos";
-import { getPublicGallery, accessGallery, getClientGalleryData } from "@/server/client-access";
+import { getPublicGallery, accessGallery, getClientGalleryData, getPreviewGalleryData } from "@/server/client-access";
 import { toggleLike, addComment } from "@/server/engagement";
 import { activityEvents } from "@/db/schema";
 
@@ -80,5 +80,29 @@ describe("client access", () => {
     expect(data.photos.map((p) => p.id)).toEqual([shown.id]);
     expect(data.likedPhotoIds).toEqual([shown.id]); // solo el like de ana
     expect(data.commentsByPhoto[shown.id] ?? []).toHaveLength(0); // el comentario de beto no se ve
+  });
+
+  it("preview: same gates as the client, works on drafts, empty likes/comments, and is tenant-scoped", async () => {
+    const db = await createTestDb();
+    const studio = await seedStudio(db);
+    const other = await seedStudio(db, "auth0|other-studio");
+
+    const g = await createGallery(db, studio.id, { title: "Borrador" }); // status: draft, no publicar
+    const visible = await createSection(db, studio.id, g.id, "Visible");
+    const hidden = await createSection(db, studio.id, g.id, "Oculta");
+    await setSectionVisible(db, studio.id, hidden.id, false);
+    const shown = await readyPhoto(db, studio.id, g.id, visible.id, "shown.jpg");
+    const unpublished = await readyPhoto(db, studio.id, g.id, visible.id, "hidden.jpg");
+    await setPhotosPublished(db, studio.id, g.id, [unpublished.id], false);
+
+    const data = await getPreviewGalleryData(db, studio.id, g.slug);
+    expect(data.gallery.status).toBe("draft"); // funciona sin publicar
+    expect(data.sections.map((s) => s.id)).toEqual([visible.id]); // mismos gates que el cliente
+    expect(data.photos.map((p) => p.id)).toEqual([shown.id]);
+    expect(data.likedPhotoIds).toEqual([]);
+    expect(data.commentsByPhoto).toEqual({});
+
+    // Otro estudio no puede previsualizar una galería que no es suya.
+    await expect(getPreviewGalleryData(db, other.id, g.slug)).rejects.toThrow("NOT_FOUND");
   });
 });

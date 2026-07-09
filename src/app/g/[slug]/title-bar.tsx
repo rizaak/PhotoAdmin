@@ -10,7 +10,7 @@ type Res = "web" | "high" | "original";
 export function TitleBar({
   design, title, sections, activeSectionId, onSelectSection,
   favoritesOnly, onToggleFavorites, zip, zipResolution, onZipResolution, onZip,
-  sentinel, labels,
+  sentinel, labels, previewMode = false,
 }: {
   design: GalleryDesign; title: string;
   sections: { id: string; name: string }[];
@@ -21,7 +21,8 @@ export function TitleBar({
   onZip: (scope: { type: "gallery" | "favorites" } | { type: "section"; sectionId: string }) => void;
   sentinel: React.RefObject<HTMLElement | null>;
   labels: { favorites: string; downloadGallery: string; downloadFavorites: string; downloadSection: string;
-    resolutions: Record<Res, string> };
+    resolutions: Record<Res, string>; previewOnly?: string };
+  previewMode?: boolean;
 }) {
   const pt = PALETTE_TOKENS[design.palette];
   const ft = FONT_TOKENS[design.fontSet];
@@ -50,7 +51,7 @@ export function TitleBar({
   return (
     <div
       className={`z-40 border-b px-5 py-3 backdrop-blur-md transition-shadow ${
-        stuck ? "fixed inset-x-0 top-0 shadow-sm" : "relative"}`}
+        stuck ? `fixed inset-x-0 ${previewMode ? "top-9" : "top-0"} shadow-sm` : "relative"}`}
       style={{ background: pt.dark ? "rgba(14,14,16,.88)" : "rgba(255,255,255,.88)",
         borderColor: pt.dark ? "#26262a" : "#eee", color: pt.text }}
     >
@@ -69,7 +70,10 @@ export function TitleBar({
           {zip.enabled && zip.resolutions.length > 0 && (
             <div className="relative" ref={menuRef}>
               <button onClick={() => setMenu((v) => !v)} aria-haspopup="menu" aria-expanded={menu}
-                className="rounded-full border p-2" style={{ borderColor: pt.dark ? "#3a3a40" : "#ddd" }}>
+                disabled={previewMode} aria-disabled={previewMode}
+                title={previewMode ? labels.previewOnly : undefined}
+                className="rounded-full border p-2 disabled:cursor-not-allowed disabled:opacity-40"
+                style={{ borderColor: pt.dark ? "#3a3a40" : "#ddd" }}>
                 <IconDownload className="h-4 w-4" />
               </button>
               {menu && (

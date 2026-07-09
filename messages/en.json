@@ -87,6 +87,11 @@
     "clearPassword": "Remove password",
     "save": "Save",
     "shareLink": "Client link",
+    "share": {
+      "preview": "Preview",
+      "copy": "Copy link",
+      "copied": "Copied ✓"
+    },
     "sections": "Sections",
     "sectionName": "Section name",
     "add": "Add",
@@ -205,6 +210,8 @@
     "zipUnavailable": "ZIP download is not available right now.",
     "close": "Close",
     "prev": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "previewBanner": "Preview — this is how your clients will see this gallery",
+    "previewOnly": "Available to clients only"
   }
 }

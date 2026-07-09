@@ -14,6 +14,7 @@ import {
   updateGalleryAction, addSectionAction, renameSectionAction,
   toggleSectionAction, moveSectionAction, setSectionOverridesAction,
 } from "./actions";
+import { ShareLinks } from "./share-links";
 import { PhotoUploader } from "./photo-uploader";
 import { PhotoManager, type PhotoView } from "./photo-manager";
 import { ReprocessPhotos } from "./reprocess-photos";
@@ -80,8 +81,12 @@ export default async function GalleryDetailPage({ params }: { params: Promise<{ 
     <div className="space-y-10">
       <div>
         <h1 className="text-2xl font-semibold">{gallery.title}</h1>
-        <p className="text-sm text-neutral-500">
-          {t("shareLink")}: <code className="rounded bg-neutral-100 px-1">/g/{gallery.slug}</code>
+        <p className="flex items-center gap-2 text-sm text-neutral-500">
+          {t("shareLink")}:
+          <ShareLinks
+            slug={gallery.slug}
+            labels={{ preview: t("share.preview"), copy: t("share.copy"), copied: t("share.copied") }}
+          />
         </p>
         <Link href={`/admin/galleries/${gallery.id}/activity`} className="text-sm text-neutral-500 hover:underline">
           {tActivity("title")} →

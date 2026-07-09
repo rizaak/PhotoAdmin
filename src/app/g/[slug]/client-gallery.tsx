@@ -34,17 +34,22 @@ type Labels = {
   downloadGallery: string; downloadFavorites: string; downloadSection: string;
   zipError: string; zipUnavailable: string;
   close: string; prev: string; next: string;
+  // Solo se usan en modo preview (fotógrafo revisando su propia galería).
+  previewBanner?: string; previewOnly?: string;
 };
 
 export function ClientGallery({
   slug, title, design, coverUrl, coverFocalX, coverFocalY,
-  sections, photos: initialPhotos, labels, zip,
+  sections, photos: initialPhotos, labels, zip, previewMode = false,
 }: {
   slug: string; title: string; design: GalleryDesign;
   coverUrl: string | null; coverFocalX: number; coverFocalY: number;
   sections: { id: string; name: string }[];
   photos: ClientPhoto[]; labels: Labels;
   zip: { enabled: boolean; resolutions: Res[] };
+  // Vista de solo lectura para el fotógrafo: like/comentario/descarga/zip nunca
+  // disparan las server actions reales, sin importar qué UI intente llamarlas.
+  previewMode?: boolean;
 }) {
   const pt = PALETTE_TOKENS[design.palette];
   const ft = FONT_TOKENS[design.fontSet];
@@ -65,6 +70,9 @@ export function ClientGallery({
   }, [notice]);
 
   async function onToggleLike(photo: ClientPhoto) {
+    // ponytail: guard here too, not just on the disabled buttons — no path through
+    // this component can reach the server action in preview mode.
+    if (previewMode) return;
     try {
       const { liked } = await toggleLikeAction({ slug, photoId: photo.id });
       setPhotos((prev) => prev.map((p) => (p.id === photo.id ? { ...p, liked } : p)));
@@ -74,11 +82,13 @@ export function ClientGallery({
   }
 
   async function onDownload(photo: ClientPhoto, resolution: Res) {
+    if (previewMode) return;
     const { url } = await downloadPhotoAction({ slug, photoId: photo.id, resolution });
     window.location.assign(url);
   }
 
   async function onZip(scope: { type: "gallery" | "favorites" } | { type: "section"; sectionId: string }) {
+    if (previewMode) return;
     try {
       const { url } = await zipRequestAction({ slug, scope, resolution: zipResolution });
       window.location.assign(url);
@@ -90,7 +100,7 @@ export function ClientGallery({
   }
 
   async function onComment(photo: ClientPhoto, body: string) {
-    if (!body.trim() || busy) return;
+    if (previewMode || !body.trim() || busy) return;
     setBusy(true);
     try {
       const c = await addCommentAction({ slug, photoId: photo.id, body });
@@ -105,7 +115,15 @@ export function ClientGallery({
     p.sectionId === activeSectionId && (!favoritesOnly || p.liked));
 
   return (
-    <main className={fontVariables} style={{ background: pt.bg, color: pt.text, fontFamily: ft.body }}>
+    <main className={`${fontVariables} ${previewMode ? "pt-9" : ""}`} style={{ background: pt.bg, color: pt.text, fontFamily: ft.body }}>
+      {previewMode && (
+        <div
+          role="status"
+          className="fixed inset-x-0 top-0 z-[70] bg-neutral-900 px-4 py-2 text-center text-xs text-white"
+        >
+          {labels.previewBanner}
+        </div>
+      )}
       <GalleryCover design={design} title={title} coverUrl={coverUrl} focalX={coverFocalX} focalY={coverFocalY} />
       <div ref={sentinelRef} className="absolute top-[60vh]" />
       <TitleBar
@@ -115,10 +133,11 @@ export function ClientGallery({
         zip={zip} zipResolution={zipResolution} onZipResolution={setZipResolution}
         onZip={(scope) => void onZip(scope)}
         sentinel={sentinelRef}
+        previewMode={previewMode}
         labels={{
           favorites: labels.favorites, downloadGallery: labels.downloadGallery,
           downloadFavorites: labels.downloadFavorites, downloadSection: labels.downloadSection,
-          resolutions: labels.resolutions,
+          resolutions: labels.resolutions, previewOnly: labels.previewOnly,
         }}
       />
 
@@ -136,6 +155,7 @@ export function ClientGallery({
           design={design} photos={visible} onOpen={(p) => setOpenId(p.id)}
           onToggleLike={(p) => void onToggleLike(p)}
           likeLabel={labels.like} unlikeLabel={labels.unlike}
+          previewMode={previewMode} previewOnlyLabel={labels.previewOnly}
         />
       </div>
 
@@ -152,6 +172,7 @@ export function ClientGallery({
         photos={visible} openId={openId} busy={busy} labels={labels}
         onClose={() => setOpenId(null)} onNavigate={setOpenId}
         onToggleLike={onToggleLike} onDownload={onDownload} onComment={onComment}
+        previewMode={previewMode}
       />
     </main>
   );

@@ -8,10 +8,12 @@ import type { ClientPhoto } from "./client-gallery";
 
 export function PhotoGrid({
   design, photos, onOpen, onToggleLike, likeLabel, unlikeLabel,
+  previewMode = false, previewOnlyLabel,
 }: {
   design: GalleryDesign; photos: ClientPhoto[];
   onOpen: (p: ClientPhoto) => void; onToggleLike: (p: ClientPhoto) => void;
   likeLabel: string; unlikeLabel: string;
+  previewMode?: boolean; previewOnlyLabel?: string;
 }) {
   const gt = GRID_TOKENS[design.gridStyle];
   const reduce = useReducedMotion();
@@ -32,7 +34,10 @@ export function PhotoGrid({
       <button
         aria-label={p.liked ? unlikeLabel : likeLabel}
         onClick={(e) => { e.stopPropagation(); onToggleLike(p); }}
-        className={`absolute right-2 top-2 rounded-full bg-black/35 p-2 text-white backdrop-blur transition-opacity ${
+        disabled={previewMode}
+        aria-disabled={previewMode}
+        title={previewMode ? previewOnlyLabel : undefined}
+        className={`absolute right-2 top-2 rounded-full bg-black/35 p-2 text-white backdrop-blur transition-opacity disabled:cursor-not-allowed ${
           p.liked ? "opacity-100" : "opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
         }`}
       >

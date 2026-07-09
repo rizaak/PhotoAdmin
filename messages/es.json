@@ -87,6 +87,11 @@
     "clearPassword": "Quitar contraseña",
     "save": "Guardar",
     "shareLink": "Enlace para clientes",
+    "share": {
+      "preview": "Vista previa",
+      "copy": "Copiar enlace",
+      "copied": "Copiado ✓"
+    },
     "sections": "Secciones",
     "sectionName": "Nombre de la sección",
     "add": "Agregar",
@@ -205,6 +210,8 @@
     "zipUnavailable": "La descarga en ZIP no está disponible por ahora.",
     "close": "Cerrar",
     "prev": "Anterior",
-    "next": "Siguiente"
+    "next": "Siguiente",
+    "previewBanner": "Vista previa — así verán tus clientes esta galería",
+    "previewOnly": "Solo disponible para clientes"
   }
 }

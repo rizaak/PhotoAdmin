@@ -10,16 +10,19 @@ type Labels = {
   close: string; prev: string; next: string; like: string; unlike: string;
   comments: string; commentPlaceholder: string; send: string; download: string;
   resolutions: Record<Res, string>; actionError: string;
+  previewOnly?: string;
 };
 
 export function Lightbox({
   photos, openId, busy, labels, onClose, onNavigate, onToggleLike, onDownload, onComment,
+  previewMode = false,
 }: {
   photos: ClientPhoto[]; openId: string | null; busy: boolean; labels: Labels;
   onClose: () => void; onNavigate: (id: string) => void;
   onToggleLike: (p: ClientPhoto) => void;
   onDownload: (p: ClientPhoto, res: Res) => Promise<void>;
   onComment: (p: ClientPhoto, body: string) => Promise<void>;
+  previewMode?: boolean;
 }) {
   const reduce = useReducedMotion();
   const idx = photos.findIndex((p) => p.id === openId);
@@ -137,17 +140,23 @@ export function Lightbox({
                 </button>
               )}
               <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 gap-3">
-                <button aria-label={photo.liked ? labels.unlike : labels.like} className={pill}
-                  onClick={() => onToggleLike(photo)}>
+                <button aria-label={photo.liked ? labels.unlike : labels.like} className={`${pill} disabled:cursor-not-allowed disabled:opacity-40`}
+                  onClick={() => onToggleLike(photo)}
+                  disabled={previewMode} aria-disabled={previewMode}
+                  title={previewMode ? labels.previewOnly : undefined}>
                   <IconHeart filled={photo.liked} className={`h-[18px] w-[18px] ${photo.liked ? "text-red-400" : ""}`} />
                 </button>
-                <button aria-label={labels.comments} className={pill}
-                  onClick={() => setPanel(panel === "comment" ? "none" : "comment")}>
+                <button aria-label={labels.comments} className={`${pill} disabled:cursor-not-allowed disabled:opacity-40`}
+                  onClick={() => setPanel(panel === "comment" ? "none" : "comment")}
+                  disabled={previewMode} aria-disabled={previewMode}
+                  title={previewMode ? labels.previewOnly : undefined}>
                   <IconComment className="h-[18px] w-[18px]" />
                 </button>
                 {photo.downloads.length > 0 && (
-                  <button aria-label={labels.download} className={pill}
-                    onClick={() => setPanel(panel === "download" ? "none" : "download")}>
+                  <button aria-label={labels.download} className={`${pill} disabled:cursor-not-allowed disabled:opacity-40`}
+                    onClick={() => setPanel(panel === "download" ? "none" : "download")}
+                    disabled={previewMode} aria-disabled={previewMode}
+                    title={previewMode ? labels.previewOnly : undefined}>
                     <IconDownload className="h-[18px] w-[18px]" />
                   </button>
                 )}

@@ -82,6 +82,18 @@ export type ClientGalleryData = {
   commentsByPhoto: Record<string, { id: string; body: string; createdAt: Date }[]>;
 };
 
+// Datos de galería para el fotógrafo en modo preview: mismos gates de visibilidad
+// que el cliente (getVisiblePhotos), pero sin exigir status "published" (permite
+// revisar borradores) y sin likes/comentarios (no hay cliente real detrás).
+export async function getPreviewGalleryData(db: Db, studioId: string, slug: string): Promise<ClientGalleryData> {
+  const [gallery] = await db.select().from(galleries)
+    .where(and(eq(galleries.slug, slug), eq(galleries.studioId, studioId)));
+  if (!gallery) throw new Error("NOT_FOUND");
+
+  const { sections: visibleSections, photos: clientPhotos } = await getVisiblePhotos(db, gallery);
+  return { gallery, sections: visibleSections, photos: clientPhotos, likedPhotoIds: [], commentsByPhoto: {} };
+}
+
 export async function getClientGalleryData(db: Db, galleryId: string, clientId: string): Promise<ClientGalleryData> {
   const [gallery] = await db.select().from(galleries)
     .where(and(eq(galleries.id, galleryId), eq(galleries.status, "published")));
